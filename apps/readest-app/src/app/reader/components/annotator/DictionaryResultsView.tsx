@@ -16,6 +16,8 @@ import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
+import { getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
+import { isCJKStr } from '@/utils/lang';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -83,6 +85,8 @@ export interface DictionaryResultsState {
   isSpeaking: boolean;
   /** Pronounce the current word via Edge TTS (falling back to platform speech). */
   speakWord: () => void;
+  /** HSK/TOCFL level and frequency rank of the current word, or `null`. */
+  lexiconEntry: LexiconEntry | null;
 }
 
 /**
@@ -208,6 +212,19 @@ export function useDictionaryResults({
     cancelWordPronounce();
     setIsSpeaking(false);
   }, [currentWord]);
+
+  const [lexiconEntry, setLexiconEntry] = useState<LexiconEntry | null>(null);
+  useEffect(() => {
+    setLexiconEntry(null);
+    if (!appService || !isCJKStr(currentWord)) return;
+    let cancelled = false;
+    void getLexiconEntry(appService, currentWord).then((entry) => {
+      if (!cancelled) setLexiconEntry(entry);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWord, appService]);
 
   const toggleExpanded = useCallback((id: string) => {
     setCards((prev) => {
@@ -452,8 +469,19 @@ export function useDictionaryResults({
     closeZoomedImage,
     isSpeaking,
     speakWord,
+    lexiconEntry,
   };
 }
+
+const formatLexiconEntry = (entry: LexiconEntry | null | undefined): string => {
+  if (!entry) return '';
+  const parts = [
+    entry.hsk !== null ? `HSK ${entry.hsk === 7 ? '7–9' : entry.hsk}` : '',
+    entry.tocfl !== null ? `TOCFL ${entry.tocfl}` : '',
+    entry.rank !== null ? `#${entry.rank.toLocaleString()}` : '',
+  ];
+  return parts.filter(Boolean).join(' · ');
+};
 
 interface DictionaryResultsHeaderProps {
   headerClassName?: string;
@@ -465,6 +493,8 @@ interface DictionaryResultsHeaderProps {
   onSpeak?: () => void;
   /** Whether pronunciation is in progress, for the active button state. */
   speaking?: boolean;
+  /** HSK/TOCFL level and frequency rank, shown after the title. */
+  lexiconEntry?: LexiconEntry | null;
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
@@ -546,9 +576,11 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   fontScale,
   zoomedImageSrc,
   closeZoomedImage,
+  lexiconEntry,
 }) => {
   const _ = useTranslation();
   const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
+  const lexiconText = formatLexiconEntry(lexiconEntry);
 
   // `first:pt-2` keeps the leading section's tighter top padding whichever of
   // the two comes first.
@@ -658,6 +690,11 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
+        {lexiconText ? (
+          <p data-testid='dict-lexicon' className='not-eink:opacity-60 px-4 pt-2 text-xs'>
+            {lexiconText}
+          </p>
+        ) : null}
         {noProvidersAtAll ? (
           <div className='flex h-full flex-col items-center justify-center px-6 text-center'>
             <h1 className='text-base font-bold'>{_('No dictionaries enabled')}</h1>
