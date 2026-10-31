@@ -1,6 +1,6 @@
 /**
- * Read-only lexicon of HSK 3.0 level, TOCFL level and Taiwan frequency rank
- * per traditional word. Built outside the repo by
+ * Read-only lexicon of HSK 3.0 level, TOCFL level, Taiwan frequency rank and
+ * English gloss per traditional word. Built outside the repo by
  * ~/Documents/Chinese/lexicon/build_lexicon.py, bundled into
  * public/dictionaries/ by scripts/copy-dictionaries.mjs and installed into
  * Data on first use. The build writes LEXICON_VERSION as `user_version`;
@@ -9,7 +9,7 @@
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
-const LEXICON_VERSION = 1;
+const LEXICON_VERSION = 2;
 const LEXICON_FILE = 'lexicon.db';
 
 type LexiconAppService = Pick<
@@ -24,6 +24,8 @@ export interface LexiconEntry {
   tocfl: string | null;
   /** Rank by number of Taiwanese sites using the word; null = not in twngrams. */
   rank: number | null;
+  /** English gloss, as on the bundled MoeDict's EN line; null = none. */
+  english: string | null;
 }
 
 interface LexiconRow extends DatabaseRow, LexiconEntry {}
@@ -71,9 +73,10 @@ export const getLexiconEntry = async (
 ): Promise<LexiconEntry | null> => {
   const db = await ensureLexicon(appService);
   if (!db) return null;
-  const rows = await db.select<LexiconRow>('SELECT hsk, tocfl, rank FROM lexicon WHERE word = ?', [
-    word,
-  ]);
+  const rows = await db.select<LexiconRow>(
+    'SELECT hsk, tocfl, rank, english FROM lexicon WHERE word = ?',
+    [word],
+  );
   const row = rows[0];
-  return row ? { hsk: row.hsk, tocfl: row.tocfl, rank: row.rank } : null;
+  return row ? { hsk: row.hsk, tocfl: row.tocfl, rank: row.rank, english: row.english } : null;
 };
