@@ -483,6 +483,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             bookTitle: bookData.book?.title,
             bookAuthor: bookData.book?.author,
             targetLang: viewSettings.translateTargetLang,
+            bookHash: bookData.book?.hash,
+            cfi: selection.cfi,
           }
         : undefined,
     // eslint-disable-next-line react-hooks/exhaustive-deps

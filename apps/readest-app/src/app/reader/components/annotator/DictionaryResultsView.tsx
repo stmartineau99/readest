@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
+import {
+  MdArrowBack,
+  MdBookmark,
+  MdBookmarkBorder,
+  MdChevronRight,
+  MdSettings,
+  MdVolumeUp,
+} from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -17,6 +24,7 @@ import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates'
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
+import { extractSentence, isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
 import { isCJKStr } from '@/utils/lang';
 import {
   getBuiltinWebSearch,
@@ -87,6 +95,10 @@ export interface DictionaryResultsState {
   speakWord: () => void;
   /** HSK/TOCFL level and frequency rank of the current word, or `null`. */
   lexiconEntry: LexiconEntry | null;
+  /** Whether the current word is in the vocab database. */
+  isSaved: boolean;
+  /** Save the current word, with its place in the book when it is the selected word. */
+  saveWord: () => void;
 }
 
 /**
@@ -225,6 +237,36 @@ export function useDictionaryResults({
       cancelled = true;
     };
   }, [currentWord, appService]);
+
+  const [isSaved, setIsSaved] = useState(false);
+  useEffect(() => {
+    setIsSaved(false);
+    if (!appService) return;
+    let cancelled = false;
+    void isWordSaved(appService, currentWord)
+      .then((saved) => {
+        if (!cancelled) setIsSaved(saved);
+      })
+      .catch((error: unknown) => console.warn('[vocab] failed to read', error));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWord, appService]);
+
+  const saveWord = useCallback(() => {
+    if (!appService) return;
+    void saveEncounter(appService, {
+      word: currentWord,
+      bookHash: currentSelection?.bookHash,
+      bookTitle: currentSelection?.bookTitle,
+      cfi: currentSelection?.cfi,
+      sentence: currentSelection
+        ? extractSentence(currentSelection.before, currentWord, currentSelection.after)
+        : undefined,
+    })
+      .then(() => setIsSaved(true))
+      .catch((error: unknown) => console.warn('[vocab] failed to save', error));
+  }, [appService, currentWord, currentSelection]);
 
   const toggleExpanded = useCallback((id: string) => {
     setCards((prev) => {
@@ -470,6 +512,8 @@ export function useDictionaryResults({
     isSpeaking,
     speakWord,
     lexiconEntry,
+    isSaved,
+    saveWord,
   };
 }
 
@@ -495,6 +539,10 @@ interface DictionaryResultsHeaderProps {
   speaking?: boolean;
   /** HSK/TOCFL level and frequency rank, shown after the title. */
   lexiconEntry?: LexiconEntry | null;
+  /** Save the current word to the vocab database; omit to hide the button. */
+  onSave?: () => void;
+  /** Whether the current word is already saved, for the filled icon. */
+  saved?: boolean;
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
@@ -505,6 +553,8 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   onManage,
   onSpeak,
   speaking,
+  onSave,
+  saved,
 }) => {
   const _ = useTranslation();
   return (
@@ -542,6 +592,23 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
         <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
           {currentWord}
         </span>
+        {onSave ? (
+          <button
+            type='button'
+            aria-label={saved ? _('Saved') : _('Save Word')}
+            title={saved ? _('Saved') : _('Save Word')}
+            aria-pressed={!!saved}
+            onClick={onSave}
+            className={clsx(
+              'btn btn-ghost btn-square btn-xs shrink-0',
+              saved
+                ? 'text-base-content'
+                : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
+            )}
+          >
+            {saved ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}
+          </button>
+        ) : null}
       </div>
       <div className='flex h-8 w-8 items-center justify-center'>
         {onManage ? (

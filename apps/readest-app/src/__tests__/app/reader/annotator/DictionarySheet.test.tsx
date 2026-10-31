@@ -92,6 +92,22 @@ vi.mock('@/services/tts/wordPronouncer', () => ({
   cancelWordPronounce: vi.fn(),
 }));
 
+// The vocab and lexicon databases are covered by their own tests; stub the
+// storage calls and keep the real sentence cutting.
+vi.mock('@/services/vocab/vocabStore', async () => {
+  const actual = await vi.importActual<typeof import('@/services/vocab/vocabStore')>(
+    '@/services/vocab/vocabStore',
+  );
+  return {
+    ...actual,
+    isWordSaved: vi.fn().mockResolvedValue(false),
+    saveEncounter: vi.fn().mockResolvedValue(undefined),
+  };
+});
+vi.mock('@/services/lexicon/lexicon', () => ({
+  getLexiconEntry: vi.fn().mockResolvedValue(null),
+}));
+
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
@@ -137,12 +153,15 @@ vi.mock('@/services/dictionaries/registry', () => ({
 
 // EnvProvider needs an appService; provide one with the file API the
 // (unmocked) StarDict provider uses for fixture reads.
-vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({
+// One env object for all renders, like the real context: effects keyed on
+// `appService` must not rerun on every render.
+vi.mock('@/context/EnvContext', () => {
+  const env = {
     envConfig: { getAppService: vi.fn().mockResolvedValue(null) },
     appService: { openFile: vi.fn() },
-  }),
-}));
+  };
+  return { useEnv: () => env };
+});
 
 // ---------------------------------------------------------------------------
 // Fixture-backed real providers
@@ -309,6 +328,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
+import { isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
 
 const renderSheet = (
   props: Partial<{
@@ -381,6 +401,75 @@ describe('DictionarySheet — speak button', () => {
       expect.any(Object),
       expect.any(Function),
     );
+  });
+});
+
+describe('DictionarySheet — save button', () => {
+  const selection = {
+    before: '他走了。他說，',
+    after: '來了嗎？我不知道。',
+    bookTitle: '巧克力冒險工廠',
+    bookHash: 'abc',
+    cfi: 'epubcfi(/6/4!/4/2)',
+  };
+
+  beforeEach(() => {
+    vi.mocked(isWordSaved).mockClear().mockResolvedValue(false);
+    vi.mocked(saveEncounter).mockClear();
+  });
+
+  it('saves the selected word with its book, place and sentence', async () => {
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const save = await waitFor(() => screen.getByLabelText('Save Word'));
+    expect(save.getAttribute('aria-pressed')).toBe('false');
+    await act(async () => {
+      fireEvent.click(save);
+    });
+
+    expect(saveEncounter).toHaveBeenCalledWith(expect.anything(), {
+      word: '老闆',
+      bookHash: 'abc',
+      bookTitle: '巧克力冒險工廠',
+      cfi: 'epubcfi(/6/4!/4/2)',
+      sentence: '他說，老闆來了嗎？',
+    });
+    expect((await waitFor(() => screen.getByLabelText('Saved'))).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('shows a saved word as saved', async () => {
+    vi.mocked(isWordSaved).mockResolvedValue(true);
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    expect((await waitFor(() => screen.getByLabelText('Saved'))).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('saves a word reached through a dictionary link without the selection place', async () => {
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
+    await act(async () => {
+      fireEvent.click(navLink);
+    });
+    await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('郊區'));
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Save Word'));
+    });
+
+    expect(saveEncounter).toHaveBeenCalledWith(expect.anything(), {
+      word: '郊區',
+      bookHash: undefined,
+      bookTitle: undefined,
+      cfi: undefined,
+      sentence: undefined,
+    });
   });
 });
 

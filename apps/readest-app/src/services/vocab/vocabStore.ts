@@ -45,6 +45,7 @@ export const isWordSaved = (appService: VocabAppService, word: string): Promise<
     return rows.length > 0;
   });
 
+/** Saves the word, plus the encounter when it has a place in a book (`cfi`). */
 export const saveEncounter = (appService: VocabAppService, encounter: VocabEncounter) =>
   withDb(appService, async (db) => {
     const now = Date.now();
@@ -52,6 +53,8 @@ export const saveEncounter = (appService: VocabAppService, encounter: VocabEncou
       encounter.word,
       now,
     ]);
+    // UNIQUE(word, cfi) treats NULLs as distinct, so a place-less save would repeat.
+    if (!encounter.cfi) return;
     await db.execute(
       `INSERT OR IGNORE INTO encounters (word, book_hash, book_title, cfi, sentence, created_at)
        VALUES (?, ?, ?, ?, ?, ?)`,

@@ -62,6 +62,9 @@ export interface DictionarySelectionContext {
   bookAuthor?: string;
   /** Language to explain the selection in: the book's translation target. */
   targetLang?: string;
+  /** Where the selection is, for saving the word with its place in the book. */
+  bookHash?: string;
+  cfi?: string;
 }
 
 export type DictionaryLookupOutcome =

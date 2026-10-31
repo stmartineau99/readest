@@ -43,6 +43,8 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          onSave={state.saveWord}
+          saved={state.isSaved}
         />
       }
       contentClassName='px-0! mt-0!'

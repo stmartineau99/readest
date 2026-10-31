@@ -60,6 +60,8 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          onSave={state.saveWord}
+          saved={state.isSaved}
         />
         <div className='min-h-0 flex-1'>
           <DictionaryResultsBody {...state} />
