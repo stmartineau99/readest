@@ -368,14 +368,14 @@ export const DEFAULT_BOOK_FONT: BookFont = {
 };
 
 export const DEFAULT_BOOK_LAYOUT: BookLayout = {
-  marginTopPx: 44,
-  marginBottomPx: 44,
-  marginLeftPx: 16,
-  marginRightPx: 16,
-  compactMarginTopPx: 16,
-  compactMarginBottomPx: 16,
-  compactMarginLeftPx: 16,
-  compactMarginRightPx: 16,
+  marginTopPx: 40,
+  marginBottomPx: 40,
+  marginLeftPx: 32,
+  marginRightPx: 32,
+  compactMarginTopPx: 40,
+  compactMarginBottomPx: 40,
+  compactMarginLeftPx: 32,
+  compactMarginRightPx: 32,
   gapPercent: 5,
   columnGapPx: 0,
   scrolled: false,

@@ -538,6 +538,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const langCode = getBookLangCode(bookData?.bookDoc?.metadata?.language);
   const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
   const isVertical = viewSettings.vertical || writingMode.includes('vertical');
+  const isScrolled = viewSettings.scrolled;
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -690,10 +691,10 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       <BoxedList title={_('Page')} data-setting-id='settings.layout.pageMargins'>
         <NumberInput
           label={_('Top Margin (px)')}
-          value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
-          onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
+          value={isScrolled ? compactMarginTopPx : marginTopPx}
+          onChange={isScrolled ? setCompactMarginTopPx : setMarginTopPx}
           min={
-            showHeader && !isVertical
+            !isScrolled && showHeader && !isVertical
               ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) - gridInsets.top
               : 0
           }
@@ -702,10 +703,10 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         />
         <NumberInput
           label={_('Bottom Margin (px)')}
-          value={showFooter && !isVertical ? marginBottomPx : compactMarginBottomPx}
-          onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
+          value={isScrolled ? compactMarginBottomPx : marginBottomPx}
+          onChange={isScrolled ? setCompactMarginBottomPx : setMarginBottomPx}
           min={
-            showFooter && !isVertical
+            !isScrolled && showFooter && !isVertical
               ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4) - gridInsets.bottom
               : 0
           }
@@ -714,16 +715,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         />
         <NumberInput
           label={_('Left Margin (px)')}
-          value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
-          onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
+          value={isScrolled ? compactMarginLeftPx : marginLeftPx}
+          onChange={isScrolled ? setCompactMarginLeftPx : setMarginLeftPx}
           min={0}
           max={144}
           step={4}
         />
         <NumberInput
           label={_('Right Margin (px)')}
-          value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
-          onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
+          value={isScrolled ? compactMarginRightPx : marginRightPx}
+          onChange={isScrolled ? setCompactMarginRightPx : setMarginRightPx}
           min={0}
           max={144}
           step={4}
