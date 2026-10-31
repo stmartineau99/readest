@@ -68,6 +68,9 @@ src-tauri/tauri.*.local.json
 # imports resolve straight from packages/ (see vendor-aliases-outside-public.test.ts).
 /public/vendor
 
+# bundled dictionary, copied in by scripts/copy-dictionaries.mjs
+/public/dictionaries
+
 # docs
 docs/superpowers
 
