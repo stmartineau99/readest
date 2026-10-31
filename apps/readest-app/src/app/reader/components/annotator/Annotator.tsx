@@ -132,6 +132,9 @@ import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/re
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
+// The selection toolbar is hidden; long press opens the dictionary instead.
+const SHOW_ANNOTATION_TOOLBAR = false;
+
 const isSameRange = (a: Range, b: Range) =>
   a.startContainer === b.startContainer &&
   a.startOffset === b.startOffset &&
@@ -2782,7 +2785,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           onCancel={handleCancelNote}
         />
       )}
-      {showAnnotPopup &&
+      {SHOW_ANNOTATION_TOOLBAR &&
+        showAnnotPopup &&
         !noteEditorInSheet &&
         trianglePosition &&
         annotPopupPosition &&
