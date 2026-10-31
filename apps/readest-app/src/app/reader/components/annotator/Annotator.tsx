@@ -22,6 +22,7 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
+import { ensureBundledDictionary } from '@/services/dictionaries/bundledDictionary';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
@@ -177,9 +178,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   useNotionSync(bookKey);
 
   useEffect(() => {
-    void loadCustomDictionaries(envConfig).catch((error) => {
-      console.warn('Failed to load custom dictionaries:', error);
-    });
+    void loadCustomDictionaries(envConfig)
+      .then(() => ensureBundledDictionary(envConfig))
+      .catch((error) => {
+        console.warn('Failed to load custom dictionaries:', error);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

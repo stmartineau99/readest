@@ -47,7 +47,8 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     // vice versa) via the settings UI's exclusivity rule. Default off
     // so existing users see no behavior change on upgrade.
     [BUILTIN_PROVIDER_IDS.systemDictionary]: false,
-    [BUILTIN_PROVIDER_IDS.wiktionary]: true,
+    // Off: the bundled MoeDict (bundledDictionary.ts) covers lookups.
+    [BUILTIN_PROVIDER_IDS.wiktionary]: false,
     [BUILTIN_PROVIDER_IDS.wikipedia]: true,
     // Opt-in: it needs an OpenAI-compatible custom translator and spends
     // the user's own API tokens on every lookup.
