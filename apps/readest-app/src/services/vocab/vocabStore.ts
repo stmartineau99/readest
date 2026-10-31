@@ -6,7 +6,7 @@
  * into the main file, so a copy of vocab.db is always complete.
  */
 import { documentDir } from '@tauri-apps/api/path';
-import type { DatabaseService } from '@/types/database';
+import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
 const DB_SCHEMA = 'vocab';
@@ -67,6 +67,58 @@ export const saveEncounter = (appService: VocabAppService, encounter: VocabEncou
         now,
       ],
     );
+  });
+
+export interface SavedEncounter {
+  bookHash: string | null;
+  bookTitle: string | null;
+  cfi: string;
+  sentence: string | null;
+  createdAt: number;
+}
+
+export interface SavedWord {
+  word: string;
+  createdAt: number;
+  encounters: SavedEncounter[];
+}
+
+interface SavedWordRow extends DatabaseRow {
+  word: string;
+  word_created_at: number;
+  book_hash: string | null;
+  book_title: string | null;
+  cfi: string | null;
+  sentence: string | null;
+  created_at: number | null;
+}
+
+/** Every saved word, newest first, each with its encounters, newest first. */
+export const listSavedWords = (appService: VocabAppService): Promise<SavedWord[]> =>
+  withDb(appService, async (db) => {
+    const rows = await db.select<SavedWordRow>(
+      `SELECT w.word, w.created_at AS word_created_at,
+              e.book_hash, e.book_title, e.cfi, e.sentence, e.created_at
+       FROM words w LEFT JOIN encounters e ON e.word = w.word
+       ORDER BY w.created_at DESC, w.word, e.created_at DESC`,
+    );
+    const words = new Map<string, SavedWord>();
+    for (const row of rows) {
+      let saved = words.get(row.word);
+      if (!saved) {
+        saved = { word: row.word, createdAt: row.word_created_at, encounters: [] };
+        words.set(row.word, saved);
+      }
+      if (row.cfi === null) continue;
+      saved.encounters.push({
+        bookHash: row.book_hash,
+        bookTitle: row.book_title,
+        cfi: row.cfi,
+        sentence: row.sentence,
+        createdAt: row.created_at!,
+      });
+    }
+    return [...words.values()];
   });
 
 // A sentence ends at 。！？, optionally followed by a closing 」.
