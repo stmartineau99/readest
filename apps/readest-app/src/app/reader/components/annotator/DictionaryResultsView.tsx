@@ -17,7 +17,7 @@ import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates'
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
-import { extractSentence, saveEncounter } from '@/services/vocab/vocabStore';
+import { extractSentence, isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
 import { isCJKStr } from '@/utils/lang';
 import {
   getBuiltinWebSearch,
@@ -88,7 +88,7 @@ export interface DictionaryResultsState {
   speakWord: () => void;
   /** HSK/TOCFL level and frequency rank of the current word, or `null`. */
   lexiconEntry: LexiconEntry | null;
-  /** Whether the current word was saved from this card. */
+  /** Whether the current word is in the vocab database. */
   isSaved: boolean;
   /** Save the current word, with its place in the book when it is the selected word. */
   saveWord: () => void;
@@ -231,11 +231,20 @@ export function useDictionaryResults({
     };
   }, [currentWord, appService]);
 
-  // Saved in this card: each lookup starts unsaved so a tap records this place.
   const [isSaved, setIsSaved] = useState(false);
   useEffect(() => {
     setIsSaved(false);
-  }, [currentWord]);
+    if (!appService) return;
+    let cancelled = false;
+    void isWordSaved(appService, currentWord)
+      .then((saved) => {
+        if (!cancelled) setIsSaved(saved);
+      })
+      .catch((error: unknown) => console.warn('[vocab] failed to read', error));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWord, appService]);
 
   const saveWord = useCallback(() => {
     if (!appService) return;
@@ -745,11 +754,16 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
         )}
       </div>
       <div className='px-4 pb-4 pt-2'>
+        {/* aria-disabled, not disabled: daisyUI greys out disabled buttons, and
+            the saved state keeps the accent as an outline. */}
         <button
           type='button'
-          onClick={saveWord}
-          disabled={isSaved}
-          className='btn btn-primary w-full'
+          onClick={isSaved ? undefined : saveWord}
+          aria-disabled={isSaved}
+          className={clsx(
+            'btn w-full',
+            isSaved ? 'btn-outline btn-primary pointer-events-none' : 'btn-primary',
+          )}
         >
           {isSaved ? _('Saved') : _('Save')}
         </button>

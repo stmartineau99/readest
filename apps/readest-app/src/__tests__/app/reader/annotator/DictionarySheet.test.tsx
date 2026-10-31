@@ -100,6 +100,7 @@ vi.mock('@/services/vocab/vocabStore', async () => {
   );
   return {
     ...actual,
+    isWordSaved: vi.fn().mockResolvedValue(false),
     saveEncounter: vi.fn().mockResolvedValue(undefined),
   };
 });
@@ -327,7 +328,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
-import { saveEncounter } from '@/services/vocab/vocabStore';
+import { isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
 
 const renderSheet = (
   props: Partial<{
@@ -413,7 +414,17 @@ describe('DictionarySheet — save button', () => {
   };
 
   beforeEach(() => {
+    vi.mocked(isWordSaved).mockClear().mockResolvedValue(false);
     vi.mocked(saveEncounter).mockClear();
+  });
+
+  it('shows Saved for a word saved in an earlier lookup', async () => {
+    vi.mocked(isWordSaved).mockResolvedValue(true);
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const saved = await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
+    expect(saved.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('saves the selected word with its book, place and sentence', async () => {
@@ -433,7 +444,7 @@ describe('DictionarySheet — save button', () => {
       sentence: '他說，老闆來了嗎？',
     });
     const saved = await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
-    expect((saved as HTMLButtonElement).disabled).toBe(true);
+    expect(saved.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('offers Save again for the next word', async () => {
@@ -448,9 +459,8 @@ describe('DictionarySheet — save button', () => {
       fireEvent.click(screen.getByTestId('nav-link'));
     });
 
-    expect(
-      (await waitFor(() => screen.getByRole('button', { name: 'Save' }))).hasAttribute('disabled'),
-    ).toBe(false);
+    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
+    expect(save.getAttribute('aria-disabled')).toBe('false');
   });
 
   it('saves a word reached through a dictionary link without the selection place', async () => {
