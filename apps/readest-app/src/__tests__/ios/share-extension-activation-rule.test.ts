@@ -44,7 +44,8 @@ describe('iOS Share Extension activation rule (txt share stuck)', () => {
     expect(projectYml).not.toContain('NSExtensionActivationSupportsText');
   });
 
-  it('accepts shared plain text only when it is not a file (#6747)', () => {
+  // it.skip: this fork drops the ShareExtension target from project.yml (free Apple ID).
+  it.skip('accepts shared plain text only when it is not a file (#6747)', () => {
     // A .txt shared from Files carries public.plain-text AND public.file-url;
     // text shared from an app (selection, AI reply) carries public.plain-text
     // alone. Checked on the iOS 26.3 simulator.
@@ -53,7 +54,7 @@ describe('iOS Share Extension activation rule (txt share stuck)', () => {
     );
   });
 
-  it('still activates for web URLs and Safari pages (article clipping preserved)', () => {
+  it.skip('still activates for web URLs and Safari pages (article clipping preserved)', () => {
     expect(activationRule).toContain(
       '(ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url")',
     );
