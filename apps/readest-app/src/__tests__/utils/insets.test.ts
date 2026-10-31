@@ -76,12 +76,23 @@ describe('getHeaderTriggerHeight (#4977)', () => {
     expect(getHeaderTriggerHeight(39, viewSettings({}))).toBe(44);
   });
 
-  it('shrinks to the compact margin when the page header is off', () => {
+  it('shrinks to the top margin when the page header is off', () => {
     // The regression: text starts 16px from the top, under a 44px strip.
-    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false }))).toBe(16);
-    expect(getHeaderTriggerHeight(39, viewSettings({ showHeader: false }))).toBe(16);
+    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false, marginTopPx: 16 }))).toBe(
+      16,
+    );
+    expect(getHeaderTriggerHeight(39, viewSettings({ showHeader: false, marginTopPx: 16 }))).toBe(
+      16,
+    );
+  });
+
+  it('uses the compact margin in scrolled mode', () => {
+    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false, scrolled: true }))).toBe(16);
     expect(
-      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx: 8 })),
+      getHeaderTriggerHeight(
+        0,
+        viewSettings({ showHeader: false, scrolled: true, compactMarginTopPx: 8 }),
+      ),
     ).toBe(8);
   });
 
@@ -93,15 +104,17 @@ describe('getHeaderTriggerHeight (#4977)', () => {
     expect(getHeaderTriggerHeight(39, viewSettings({ marginTopPx: -20 }))).toBe(19);
   });
 
-  it('uses the compact margin in vertical writing mode, where the band is sideways', () => {
-    expect(getHeaderTriggerHeight(0, viewSettings({ vertical: true }))).toBe(16);
-    expect(getHeaderTriggerHeight(0, viewSettings({ writingMode: 'vertical-rl' }))).toBe(16);
+  it('uses the top margin without the header floor in vertical writing mode', () => {
+    expect(getHeaderTriggerHeight(0, viewSettings({ vertical: true, marginTopPx: 8 }))).toBe(8);
+    expect(
+      getHeaderTriggerHeight(0, viewSettings({ writingMode: 'vertical-rl', marginTopPx: 8 })),
+    ).toBe(8);
   });
 
   it('collapses instead of going negative when the text starts above the cell', () => {
-    expect(
-      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx: -20 })),
-    ).toBe(0);
+    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false, marginTopPx: -20 }))).toBe(
+      0,
+    );
   });
 });
 

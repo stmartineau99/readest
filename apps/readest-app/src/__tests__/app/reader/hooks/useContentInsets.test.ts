@@ -40,8 +40,8 @@ describe('useContentInsets', () => {
     expect(result.current.contentInsets.left).toBe(16);
     expect(result.current.contentInsets.right).toBe(16);
 
-    viewSettings.compactMarginLeftPx = 40;
-    viewSettings.compactMarginRightPx = 32;
+    viewSettings.marginLeftPx = 40;
+    viewSettings.marginRightPx = 32;
     rerender({ vs: viewSettings, gi: ZERO });
 
     expect(result.current.contentInsets.left).toBe(40);

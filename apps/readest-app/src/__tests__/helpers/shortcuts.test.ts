@@ -95,6 +95,8 @@ describe('No identical keybinding lists across actions (#3675)', () => {
     const shortcuts = await getDefaults();
     const keyListToActions = new Map<string, string[]>();
     for (const [name, entry] of Object.entries(shortcuts)) {
+      // An empty key list means the action is unbound, not a shared binding.
+      if (entry.keys.length === 0) continue;
       const id = [...entry.keys].sort().join(',').toLowerCase();
       const actions = keyListToActions.get(id) ?? [];
       actions.push(name);

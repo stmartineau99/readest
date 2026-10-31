@@ -251,12 +251,12 @@ describe('ViewMenu layout', () => {
     expect(screen.queryByText('Speed Reading Mode')).toBeNull();
   });
 
-  it('keeps Paragraph and Speed Reading modes for reflowable books', () => {
+  it('hides Paragraph and Speed Reading modes for reflowable books', () => {
     mockBookData.isFixedLayout = false;
     mockBookData.bookDoc.rendition = { layout: 'reflowable' };
     render(<ViewMenu bookKey='book-1' />);
-    expect(screen.getByText('Paragraph Mode')).toBeTruthy();
-    expect(screen.getByText('Speed Reading Mode')).toBeTruthy();
+    expect(screen.queryByText('Paragraph Mode')).toBeNull();
+    expect(screen.queryByText('Speed Reading Mode')).toBeNull();
   });
 
   it('groups the image colour toggles after Auto Scroll and Webtoon Mode on its own above sync', () => {
