@@ -1,6 +1,6 @@
 name: Readest
 options:
-  bundleIdPrefix: com.bilingify.readest
+  bundleIdPrefix: com.stmartineau.readest
   deploymentTarget:
     iOS: 16.4
 fileGroups: [../../src]
@@ -15,8 +15,8 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: Readest
-      PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest
-      DEVELOPMENT_TEAM: J5W48D69VR
+      PRODUCT_BUNDLE_IDENTIFIER: com.stmartineau.readest
+      DEVELOPMENT_TEAM: QL49GSVYT7
 targetTemplates:
   app:
     type: application
