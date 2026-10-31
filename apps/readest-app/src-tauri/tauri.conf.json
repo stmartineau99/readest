@@ -226,11 +226,6 @@
     "deep-link": {
       "mobile": [
         {
-          "scheme": ["https"],
-          "host": "web.readest.com",
-          "appLink": true
-        },
-        {
           "scheme": ["readest"],
           "appLink": false
         },
