@@ -86,14 +86,13 @@ describe('getHeaderTriggerHeight (#4977)', () => {
     );
   });
 
-  it('uses the compact margin in scrolled mode', () => {
-    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false, scrolled: true }))).toBe(16);
+  it('uses the same top margin in scrolled mode as in paginated mode', () => {
     expect(
       getHeaderTriggerHeight(
         0,
-        viewSettings({ showHeader: false, scrolled: true, compactMarginTopPx: 8 }),
+        viewSettings({ showHeader: false, scrolled: true, marginTopPx: 24, compactMarginTopPx: 8 }),
       ),
-    ).toBe(8);
+    ).toBe(24);
   });
 
   it('follows a reduced top margin while the page header is on', () => {

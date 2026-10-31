@@ -2,23 +2,13 @@ import { Insets } from '@/types/misc';
 import { ViewSettings } from '@/types/book';
 import type { Point, Position, Rect } from '@/utils/sel';
 
-// Paginated mode uses the normal margin set, scrolled mode the compact set.
+// Paginated and scrolled mode share the normal margin set.
 export const getViewInsets = (viewSettings: ViewSettings) => {
-  const scrolled = viewSettings.scrolled;
-  const fullMarginTopPx = viewSettings.marginPx || viewSettings.marginTopPx;
-  const compactMarginTopPx = viewSettings.compactMarginPx || viewSettings.compactMarginTopPx;
-  const fullMarginBottomPx = viewSettings.marginBottomPx;
-  const compactMarginBottomPx = viewSettings.compactMarginBottomPx;
-  const fullMarginLeftPx = viewSettings.marginLeftPx;
-  const fullMarginRightPx = viewSettings.marginRightPx;
-  const compactMarginLeftPx = viewSettings.compactMarginLeftPx;
-  const compactMarginRightPx = viewSettings.compactMarginRightPx;
-
   return {
-    top: scrolled ? compactMarginTopPx : fullMarginTopPx,
-    right: scrolled ? compactMarginRightPx : fullMarginRightPx,
-    bottom: scrolled ? compactMarginBottomPx : fullMarginBottomPx,
-    left: scrolled ? compactMarginLeftPx : fullMarginLeftPx,
+    top: viewSettings.marginPx || viewSettings.marginTopPx,
+    right: viewSettings.marginRightPx,
+    bottom: viewSettings.marginBottomPx,
+    left: viewSettings.marginLeftPx,
   } as Insets;
 };
 
