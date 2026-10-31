@@ -100,7 +100,6 @@ vi.mock('@/services/vocab/vocabStore', async () => {
   );
   return {
     ...actual,
-    isWordSaved: vi.fn().mockResolvedValue(false),
     saveEncounter: vi.fn().mockResolvedValue(undefined),
   };
 });
@@ -328,7 +327,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
-import { isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
+import { saveEncounter } from '@/services/vocab/vocabStore';
 
 const renderSheet = (
   props: Partial<{
@@ -414,7 +413,6 @@ describe('DictionarySheet — save button', () => {
   };
 
   beforeEach(() => {
-    vi.mocked(isWordSaved).mockClear().mockResolvedValue(false);
     vi.mocked(saveEncounter).mockClear();
   });
 
@@ -422,8 +420,7 @@ describe('DictionarySheet — save button', () => {
     providersForNextRender.push(buildNavProvider('郊區'));
     renderSheet({ word: '老闆', selection });
 
-    const save = await waitFor(() => screen.getByLabelText('Save Word'));
-    expect(save.getAttribute('aria-pressed')).toBe('false');
+    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
     await act(async () => {
       fireEvent.click(save);
     });
@@ -435,19 +432,25 @@ describe('DictionarySheet — save button', () => {
       cfi: 'epubcfi(/6/4!/4/2)',
       sentence: '他說，老闆來了嗎？',
     });
-    expect((await waitFor(() => screen.getByLabelText('Saved'))).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    const saved = await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
+    expect((saved as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('shows a saved word as saved', async () => {
-    vi.mocked(isWordSaved).mockResolvedValue(true);
+  it('offers Save again for the next word', async () => {
     providersForNextRender.push(buildNavProvider('郊區'));
     renderSheet({ word: '老闆', selection });
 
-    expect((await waitFor(() => screen.getByLabelText('Saved'))).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    await act(async () => {
+      fireEvent.click(await waitFor(() => screen.getByRole('button', { name: 'Save' })));
+    });
+    await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('nav-link'));
+    });
+
+    expect(
+      (await waitFor(() => screen.getByRole('button', { name: 'Save' }))).hasAttribute('disabled'),
+    ).toBe(false);
   });
 
   it('saves a word reached through a dictionary link without the selection place', async () => {
@@ -460,7 +463,7 @@ describe('DictionarySheet — save button', () => {
     });
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('郊區'));
     await act(async () => {
-      fireEvent.click(screen.getByLabelText('Save Word'));
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     });
 
     expect(saveEncounter).toHaveBeenCalledWith(expect.anything(), {
