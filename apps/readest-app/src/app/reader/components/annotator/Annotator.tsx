@@ -1247,8 +1247,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           break;
         case 'dictionary':
           // A dictionary lookup only makes sense for a single word (or a short
-          // CJK term); on a longer selection fall back to the annotation
-          // toolbar so highlighting and copying stay reachable (#5213).
+          // CJK term); a longer selection stays selected with no toolbar.
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
             // Drop the selection for as long as the lookup is up, so iOS's
@@ -1268,8 +1267,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             if (selection.popup) {
               selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
             }
-          } else {
-            handleShowAnnotPopup();
           }
           break;
         case 'translate':

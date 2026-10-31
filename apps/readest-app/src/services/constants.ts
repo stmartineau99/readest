@@ -579,7 +579,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
 
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   enableAnnotationQuickActions: true,
-  annotationQuickAction: null,
+  annotationQuickAction: 'dictionary',
   keepSelectionAfterLookup: false,
   annotationToolbarItems: DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
   copyToNotebook: false,
