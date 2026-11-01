@@ -16,7 +16,11 @@ import SavedWordsFilters, {
   type SavedWordsFilter,
 } from './SavedWordsFilters';
 import { MOCK_SAVED_WORDS } from './mockSavedWords';
+import LoadMoreRow from './LoadMoreRow';
 import ToneColoredWord from './ToneColoredWord';
+
+/** Words shown at once; pulling up past the last one shows this many more. */
+const PAGE_SIZE = 50;
 
 /** With `word`, the dialog opens on All words with that word's sentences expanded. */
 export const setSavedWordsDialogVisible = (visible: boolean, word?: string) => {
@@ -159,6 +163,15 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
   const [view, setView] = useState<SavedWordsView>(
     focusWord ? { kind: 'words', book: null } : { kind: 'books' },
   );
+  const [shownCount, setShownCount] = useState(PAGE_SIZE);
+  const changeFilter = (next: SavedWordsFilter) => {
+    setFilter(next);
+    setShownCount(PAGE_SIZE);
+  };
+  const changeView = (next: SavedWordsView) => {
+    setView(next);
+    setShownCount(PAGE_SIZE);
+  };
 
   useEffect(() => {
     if (!appService) return;
@@ -224,7 +237,7 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
           <NavigationRow
             title={_('All words')}
             status={wordCount(data.words.length)}
-            onClick={() => setView({ kind: 'words', book: null })}
+            onClick={() => changeView({ kind: 'words', book: null })}
           />
         </BoxedList>
         {books.length > 0 && (
@@ -234,7 +247,7 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
                 key={book}
                 title={book}
                 status={wordCount(inBook(book))}
-                onClick={() => setView({ kind: 'words', book })}
+                onClick={() => changeView({ kind: 'words', book })}
               />
             ))}
           </BoxedList>
@@ -246,6 +259,9 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
   const shown = data.words.filter((w) =>
     matchesFilter(w, data.lexicon.get(w.word), { ...filter, book: view.book }),
   );
+  // The word opened from the dictionary card is always on the first page.
+  const visibleCount = Math.max(shownCount, shown.findIndex((w) => w.word === focusWord) + 1);
+  const remaining = shown.length - visibleCount;
 
   return (
     <div className='flex flex-col gap-4 pb-6'>
@@ -253,7 +269,7 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
         <button
           type='button'
           className='text-base-content flex items-center gap-1 py-1 text-sm'
-          onClick={() => setView({ kind: 'books' })}
+          onClick={() => changeView({ kind: 'books' })}
         >
           <MdChevronLeft size={20} />
           {view.book ?? _('All words')}
@@ -269,14 +285,14 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
           )}
           toggleButton={<MdFilterList size={18} className='fill-base-content' />}
         >
-          <SavedWordsFilters filter={filter} onChange={setFilter} />
+          <SavedWordsFilters filter={filter} onChange={changeFilter} />
         </Dropdown>
       </div>
       <BoxedList title={wordCount(shown.length)}>
         {shown.length === 0 && (
           <p className='text-base-content/70 py-4 pe-4'>{_('No words match the filters')}</p>
         )}
-        {shown.map((saved) => (
+        {shown.slice(0, visibleCount).map((saved) => (
           <SavedWordItem
             key={saved.word}
             saved={saved}
@@ -286,6 +302,12 @@ const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }
             focused={saved.word === focusWord}
           />
         ))}
+        {remaining > 0 && (
+          <LoadMoreRow
+            count={Math.min(PAGE_SIZE, remaining)}
+            onLoad={() => setShownCount(visibleCount + PAGE_SIZE)}
+          />
+        )}
       </BoxedList>
     </div>
   );
