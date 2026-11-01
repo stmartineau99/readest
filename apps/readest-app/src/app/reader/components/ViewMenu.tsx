@@ -43,6 +43,7 @@ import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
 import { setCoverSpread } from '@/utils/spread';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -76,6 +77,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [webtoonMode, setWebtoonMode] = useState(viewSettings!.webtoonMode ?? false);
   const [lockHorizontalPan, setLockHorizontalPan] = useState(
     viewSettings!.lockHorizontalPan ?? false,
+  );
+  const [isParagraphMode, setParagraphMode] = useState(
+    viewSettings?.paragraphMode?.enabled ?? false,
   );
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
   const [contrast, setContrast] = useState(viewSettings!.contrast ?? 100);
@@ -112,6 +116,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleWebtoonMode = () => setWebtoonMode(!webtoonMode);
   const toggleLockHorizontalPan = () => setLockHorizontalPan(!lockHorizontalPan);
+  const toggleParagraphMode = () => {
+    setParagraphMode(!isParagraphMode);
+    eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey });
+    setIsDropdownOpen?.(false);
+  };
 
   const openReadingStats = () => {
     setIsDropdownOpen?.(false);
@@ -171,6 +180,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     // BookOrbit may be in manual mode (#6029), where nothing is ever pending
     // and the flush above does nothing, so ask it for a real push.
     eventDispatcher.dispatch('push-kosync', { bookKey, provider: 'bookorbit' });
+  };
+
+  const handleStartRSVP = () => {
+    setIsDropdownOpen?.(false);
+    eventDispatcher.dispatch('rsvp-start', { bookKey });
   };
 
   const toggleAutoScroll = () => {
@@ -538,11 +552,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
-      {bookData.isFixedLayout && (
+      {bookData.isFixedLayout ? (
+        <MenuItem label={_('Webtoon Mode')} toggled={webtoonMode} onClick={toggleWebtoonMode} />
+      ) : isMinimalMode() ? null : (
         <>
-          <MenuItem label={_('Webtoon Mode')} toggled={webtoonMode} onClick={toggleWebtoonMode} />
-          <hr aria-hidden='true' className='border-base-300 my-1' />
+          <MenuItem
+            label={_('Paragraph Mode')}
+            shortcut='Shift+P'
+            Icon={isParagraphMode ? MdCheck : undefined}
+            onClick={toggleParagraphMode}
+          />
+          <MenuItem label={_('Speed Reading Mode')} shortcut='Shift+V' onClick={handleStartRSVP} />
         </>
+      )}
+
+      {(bookData.isFixedLayout || !isMinimalMode()) && (
+        <hr aria-hidden='true' className='border-base-300 my-1' />
       )}
 
       <MenuItem

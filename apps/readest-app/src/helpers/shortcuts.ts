@@ -84,7 +84,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'Text to Speech',
   },
   onToggleParagraphMode: {
-    keys: [],
+    keys: ['shift+p'],
     description: _('Toggle Paragraph Mode'),
     section: 'General',
   },
@@ -94,7 +94,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'General',
   },
   onStartRSVP: {
-    keys: [],
+    keys: ['shift+v'],
     description: _('Speed Reading Mode'),
     section: 'General',
   },

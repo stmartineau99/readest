@@ -26,6 +26,7 @@ import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
 import { loadShortcuts } from '@/helpers/shortcuts';
 import { matchesShortcut } from '@/utils/shortcutKeys';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
 import useBooksManager from './useBooksManager';
 import { getReadingRulerMoveDirection, isReadingRulerMoveKey } from '../utils/readingRuler';
 
@@ -426,7 +427,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const toggleParagraphMode = (event?: KeyboardEvent | MessageEvent) => {
-    if (!sideBarBookKey) return false;
+    if (!sideBarBookKey || isMinimalMode()) return false;
     if (event instanceof KeyboardEvent && event.repeat) return true;
 
     const now = Date.now();
@@ -438,7 +439,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const startRSVP = () => {
-    if (!sideBarBookKey) return;
+    if (!sideBarBookKey || isMinimalMode()) return;
     eventDispatcher.dispatch('rsvp-start', { bookKey: sideBarBookKey });
   };
 

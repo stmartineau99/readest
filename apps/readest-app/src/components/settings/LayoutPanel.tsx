@@ -690,8 +690,8 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       <BoxedList title={_('Page')} data-setting-id='settings.layout.pageMargins'>
         <NumberInput
           label={_('Top Margin (px)')}
-          value={marginTopPx}
-          onChange={setMarginTopPx}
+          value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
+          onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
           min={
             showHeader && !isVertical
               ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) - gridInsets.top
@@ -702,8 +702,8 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         />
         <NumberInput
           label={_('Bottom Margin (px)')}
-          value={marginBottomPx}
-          onChange={setMarginBottomPx}
+          value={showFooter && !isVertical ? marginBottomPx : compactMarginBottomPx}
+          onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
           min={
             showFooter && !isVertical
               ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4) - gridInsets.bottom
@@ -714,16 +714,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         />
         <NumberInput
           label={_('Left Margin (px)')}
-          value={marginLeftPx}
-          onChange={setMarginLeftPx}
+          value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
+          onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
           min={0}
           max={144}
           step={4}
         />
         <NumberInput
           label={_('Right Margin (px)')}
-          value={marginRightPx}
-          onChange={setMarginRightPx}
+          value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
+          onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
           min={0}
           max={144}
           step={4}

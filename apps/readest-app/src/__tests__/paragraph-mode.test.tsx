@@ -548,8 +548,7 @@ describe('paragraph mode', () => {
     expect(document.activeElement).toBe(dialog);
   });
 
-  // it.skip: this fork unbinds Shift+P along with the Paragraph Mode menu item.
-  it.skip('exits when the toggle paragraph mode shortcut (Shift+P) is pressed (#4717)', async () => {
+  it('exits when the toggle paragraph mode shortcut (Shift+P) is pressed (#4717)', async () => {
     const onClose = vi.fn();
     const { container } = await renderVisibleOverlay(onClose);
 

@@ -53,7 +53,8 @@ const UPSTREAM_VIEW_PRESET: ViewPreset = {
   annotationQuickAction: DEFAULT_ANNOTATOR_CONFIG.annotationQuickAction,
 };
 
-export const isMinimalMode = () => useSettingsStore.getState().settings.minimalMode ?? false;
+// Optional chaining: upstream tests mock useSettingsStore without getState.
+export const isMinimalMode = () => useSettingsStore.getState?.()?.settings?.minimalMode ?? false;
 
 export const applyMinimalPreset = async (envConfig: EnvConfigType, minimal: boolean) => {
   const preset = minimal ? MINIMAL_VIEW_PRESET : UPSTREAM_VIEW_PRESET;
