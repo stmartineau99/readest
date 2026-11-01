@@ -1,7 +1,8 @@
 /**
  * Minimal mode: one switch for the fork's reading setup. Menu items, shortcuts,
  * margins and the selection toolbar check isMinimalMode() live; margins, CJK
- * font and the long-press action are a preset written once when it is toggled.
+ * font and the long-press action are a preset (minimalPreset.ts) written when
+ * it is toggled, and on first load.
  */
 import { useSettingsStore } from '@/store/settingsStore';
 import { saveViewSettings } from '@/helpers/settings';
@@ -11,34 +12,7 @@ import {
   DEFAULT_BOOK_LAYOUT,
 } from '@/services/constants';
 import type { EnvConfigType } from '@/services/environment';
-import type { ViewSettings } from '@/types/book';
-
-type PresetKey =
-  | 'marginTopPx'
-  | 'marginBottomPx'
-  | 'marginLeftPx'
-  | 'marginRightPx'
-  | 'compactMarginTopPx'
-  | 'compactMarginBottomPx'
-  | 'compactMarginLeftPx'
-  | 'compactMarginRightPx'
-  | 'defaultCJKFont'
-  | 'annotationQuickAction';
-
-type ViewPreset = Pick<ViewSettings, PresetKey>;
-
-export const MINIMAL_VIEW_PRESET: ViewPreset = {
-  marginTopPx: 80,
-  marginBottomPx: 80,
-  marginLeftPx: 32,
-  marginRightPx: 32,
-  compactMarginTopPx: 80,
-  compactMarginBottomPx: 80,
-  compactMarginLeftPx: 32,
-  compactMarginRightPx: 32,
-  defaultCJKFont: 'PingFang TC',
-  annotationQuickAction: 'dictionary',
-};
+import { MINIMAL_VIEW_PRESET, type PresetKey, type ViewPreset } from './minimalPreset';
 
 // A function, not a constant: upstream tests mock @/services/constants partially.
 const getUpstreamViewPreset = (): ViewPreset => ({

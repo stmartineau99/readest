@@ -29,6 +29,7 @@ import {
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
+import { migrateMinimalPreset } from './minimal/minimalPreset';
 
 export interface Context {
   fs: FileSystem;
@@ -202,7 +203,8 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
-  if (migrateBookshelfSettings(settings)) {
+  const minimalPresetMigrated = migrateMinimalPreset(settings);
+  if (migrateBookshelfSettings(settings) || minimalPresetMigrated) {
     await saveSettings(ctx.fs, settings);
   }
 
