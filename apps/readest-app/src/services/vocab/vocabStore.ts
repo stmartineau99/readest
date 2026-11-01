@@ -91,11 +91,21 @@ interface EncounterRow extends DatabaseRow {
   created_at: number;
 }
 
+// Vertical books render 「」『』 as ﹁﹂﹃﹄ (transformers/punctuation.ts); store and show them upright.
+const HORIZONTAL_QUOTES: Record<string, string> = {
+  '﹁': '「',
+  '﹂': '」',
+  '﹃': '『',
+  '﹄': '』',
+};
+const toHorizontalQuotes = (text: string) =>
+  text.replace(/[﹁﹂﹃﹄]/g, (mark) => HORIZONTAL_QUOTES[mark]!);
+
 const toEncounter = (row: EncounterRow): SavedEncounter => ({
   bookHash: row.book_hash,
   bookTitle: row.book_title,
   cfi: row.cfi,
-  sentence: row.sentence,
+  sentence: row.sentence && toHorizontalQuotes(row.sentence),
   createdAt: row.created_at,
 });
 
@@ -146,6 +156,9 @@ const SENTENCE_END = /[。！？]」?/g;
 
 /** The sentence around `word`, given the text right before and after it. */
 export const extractSentence = (before: string, word: string, after: string): string => {
+  before = toHorizontalQuotes(before);
+  word = toHorizontalQuotes(word);
+  after = toHorizontalQuotes(after);
   const ends = [...before.matchAll(SENTENCE_END)];
   const last = ends[ends.length - 1];
   const head = last ? before.slice(last.index + last[0].length) : before;

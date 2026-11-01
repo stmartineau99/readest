@@ -30,6 +30,12 @@ describe('extractSentence', () => {
   test('keeps the whole context when there is no sentence end', () => {
     expect(extractSentence('開頭', '老闆', '結尾')).toBe('開頭老闆結尾');
   });
+
+  test('turns vertical quotes upright and cuts after the closing one', () => {
+    expect(extractSentence('前一句。」﹁他說：﹃', '老闆', '﹄笑了。﹂後一句。')).toBe(
+      '「他說：『老闆』笑了。」',
+    );
+  });
 });
 
 describe('vocabStore', () => {
@@ -207,6 +213,15 @@ describe('vocabStore', () => {
           },
         ],
       });
+    });
+
+    test('shows sentences saved with vertical quotes upright', async () => {
+      await saveAt(1000, { word: '老闆', cfi: 'c1', sentence: '﹁老闆笑了。﹂' });
+      const [saved] = await listSavedWords(appService);
+      expect(saved!.encounters[0]!.sentence).toBe('「老闆笑了。」');
+      expect((await getSavedWord(appService, '老闆'))!.encounters[0]!.sentence).toBe(
+        '「老闆笑了。」',
+      );
     });
 
     test('getSavedWord returns null for a word that is not saved', async () => {
