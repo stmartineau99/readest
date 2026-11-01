@@ -37,7 +37,7 @@ const WORDS: SavedWord[] = [
 ];
 
 const entry = (fields: Partial<LexiconEntry>) =>
-  ({ hsk: null, tocfl: null, ...fields }) as LexiconEntry;
+  ({ hsk: null, tocfl: null, chengyu: false, ...fields }) as LexiconEntry;
 
 const LEXICON: Record<string, LexiconEntry> = {
   狐狸: entry({ hsk: 6, tocfl: '4', pinyin: 'hú li', english: 'fox' }),

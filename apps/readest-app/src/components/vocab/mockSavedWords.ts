@@ -39,6 +39,30 @@ export const MOCK_SAVED_WORDS: SavedWord[] = [
     ],
   },
   {
+    word: '一毛不拔',
+    createdAt: day(30),
+    encounters: [
+      {
+        ...CHOCOLATE,
+        cfi: 'mock-12',
+        sentence: '那個老闆一毛不拔，從不送人糖果。',
+        createdAt: day(30),
+      },
+    ],
+  },
+  {
+    word: '一丘之貉',
+    createdAt: day(30),
+    encounters: [
+      {
+        ...PRINCE,
+        cfi: 'mock-13',
+        sentence: '在他看來，那些大人都是一丘之貉。',
+        createdAt: day(30),
+      },
+    ],
+  },
+  {
     word: '糖果',
     createdAt: day(30),
     encounters: [

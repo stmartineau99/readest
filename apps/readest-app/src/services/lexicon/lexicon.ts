@@ -1,6 +1,6 @@
 /**
  * Read-only lexicon of HSK 3.0 level, TOCFL level, Taiwan frequency rank,
- * English gloss and reading per traditional word. Built outside the repo by
+ * English gloss, reading and chengyu flag per traditional word. Built outside the repo by
  * ~/Documents/Chinese/lexicon/build_lexicon.py, bundled into
  * public/dictionaries/ by scripts/copy-dictionaries.mjs and installed into
  * Data on first use. The build writes LEXICON_VERSION as `user_version`;
@@ -9,7 +9,7 @@
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
-const LEXICON_VERSION = 3;
+const LEXICON_VERSION = 4;
 const LEXICON_FILE = 'lexicon.db';
 
 type LexiconAppService = Pick<
@@ -26,13 +26,17 @@ export interface LexiconEntry {
   rank: number | null;
   /** English gloss, as on the bundled MoeDict's EN line; null = none. */
   english: string | null;
-  /** MoeDict zhuyin, several readings joined with " / "; null = not in MoeDict. */
+  /** MoeDict zhuyin, several readings joined with " / ", else 成語典's; null = in neither. */
   zhuyin: string | null;
-  /** MoeDict pinyin, in the same order as `zhuyin`. */
+  /** Pinyin from the same source, in the same order as `zhuyin`. */
   pinyin: string | null;
+  /** Idiom in the MoE 成語典 (main or non-main entry). */
+  chengyu: boolean;
 }
 
-interface LexiconRow extends DatabaseRow, LexiconEntry {}
+interface LexiconRow extends DatabaseRow, Omit<LexiconEntry, 'chengyu'> {
+  chengyu: number | null;
+}
 
 let dbPromise: Promise<DatabaseService | null> | null = null;
 
@@ -78,7 +82,7 @@ export const getLexiconEntry = async (
   const db = await ensureLexicon(appService);
   if (!db) return null;
   const rows = await db.select<LexiconRow>(
-    'SELECT hsk, tocfl, rank, english, zhuyin, pinyin FROM lexicon WHERE word = ?',
+    'SELECT hsk, tocfl, rank, english, zhuyin, pinyin, chengyu FROM lexicon WHERE word = ?',
     [word],
   );
   const row = rows[0];
@@ -90,6 +94,7 @@ export const getLexiconEntry = async (
         english: row.english,
         zhuyin: row.zhuyin,
         pinyin: row.pinyin,
+        chengyu: row.chengyu === 1,
       }
     : null;
 };
