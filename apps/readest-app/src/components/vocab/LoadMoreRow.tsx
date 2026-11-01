@@ -1,28 +1,18 @@
-import React, { useRef } from 'react';
-import { MdArrowUpward } from 'react-icons/md';
+import React from 'react';
+import { MdKeyboardArrowDown } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
-import { usePullUpToLoad } from './usePullUpToLoad';
 
-/** The row after the last shown word: pull up past it, or tap it, to show `count` more. */
+/** A small down arrow after the last shown word: tapping it shows `count` more. */
 const LoadMoreRow: React.FC<{ count: number; onLoad: () => void }> = ({ count, onLoad }) => {
   const _ = useTranslation();
-  const ref = useRef<HTMLButtonElement>(null);
-  const armed = usePullUpToLoad(ref, onLoad);
-
   return (
     <button
-      ref={ref}
       type='button'
       onClick={onLoad}
-      className='text-base-content/70 flex w-full items-center justify-center gap-1.5 py-4 pe-4 text-sm'
+      aria-label={_('Show {{count}} more', { count })}
+      className='text-base-content/50 flex w-full items-center justify-center py-3 pe-4'
     >
-      <MdArrowUpward
-        size={16}
-        className={armed ? 'rotate-180 transition-transform' : 'transition-transform'}
-      />
-      {armed
-        ? _('Release to load {{count}} more', { count })
-        : _('Pull up for {{count}} more', { count })}
+      <MdKeyboardArrowDown size={20} aria-hidden='true' />
     </button>
   );
 };
