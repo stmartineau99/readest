@@ -21,3 +21,14 @@ if (missing.length > 0) {
   for (const name of files) copyFileSync(path.join(sourceDir, name), path.join(targetDir, name));
   console.log(`[copy-dictionaries] copied ${files.length} files to ${targetDir}`);
 }
+
+// HSK/TOCFL levels and frequency rank, fetched by services/lexicon/lexicon.ts.
+// Built by ~/Documents/Chinese/lexicon/build_lexicon.py.
+const lexiconSource = path.resolve(appDir, '../../../lexicon/out/lexicon.db');
+if (!existsSync(lexiconSource)) {
+  console.warn(`[copy-dictionaries] skipped, missing: ${lexiconSource}`);
+} else {
+  mkdirSync(targetDir, { recursive: true });
+  copyFileSync(lexiconSource, path.join(targetDir, 'lexicon.db'));
+  console.log(`[copy-dictionaries] copied lexicon.db to ${targetDir}`);
+}

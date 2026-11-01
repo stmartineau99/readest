@@ -96,6 +96,7 @@ import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import SavedWordsDialog from '@/components/vocab/SavedWordsDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';
@@ -2208,6 +2209,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       <AboutWindow />
       <ReadingStatsDialog />
+      <SavedWordsDialog />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
       <UpdaterWindow />

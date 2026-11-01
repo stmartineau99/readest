@@ -314,6 +314,29 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
       `,
     },
   ],
+  vocab: [
+    {
+      // Saved words, one row per place in a book where the word was saved.
+      name: '2026103101_vocab',
+      sql: `
+        CREATE TABLE IF NOT EXISTS words (
+          word TEXT PRIMARY KEY,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS encounters (
+          id INTEGER PRIMARY KEY,
+          word TEXT NOT NULL REFERENCES words(word),
+          book_hash TEXT,
+          book_title TEXT,
+          cfi TEXT,
+          sentence TEXT,
+          created_at INTEGER NOT NULL,
+          UNIQUE(word, cfi)
+        );
+      `,
+    },
+  ],
 };
 
 export function getMigrations(schema: SchemaType): MigrationEntry[] {

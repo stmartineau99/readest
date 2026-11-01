@@ -98,6 +98,7 @@ import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
+import { setSavedWordsDialogVisible } from '@/components/vocab/SavedWordsDialog';
 import NoteEditorSheet from './NoteEditorSheet';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -483,6 +484,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             bookTitle: bookData.book?.title,
             bookAuthor: bookData.book?.author,
             targetLang: viewSettings.translateTargetLang,
+            bookHash: bookData.book?.hash,
+            cfi: selection.cfi,
           }
         : undefined,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2744,6 +2747,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             setActiveSettingsItemId('settings.language.dictionaries.manage');
             setSettingsDialogOpen(true);
           };
+          const onOpenSavedWord = (savedWord: string) => {
+            handleDismissPopupAndSelection();
+            setSavedWordsDialogVisible(true, savedWord);
+          };
           if (useSheet) {
             return (
               <DictionarySheet
@@ -2752,6 +2759,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
                 selection={dictionarySelection}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
+                onOpenSavedWord={onOpenSavedWord}
               />
             );
           }
@@ -2767,6 +2775,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
               popupHeight={dictPopupHeight}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
+              onOpenSavedWord={onOpenSavedWord}
             />
           );
         })()}

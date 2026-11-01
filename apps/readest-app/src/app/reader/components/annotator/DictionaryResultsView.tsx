@@ -16,6 +16,14 @@ import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
+import { formatLexiconEntry, getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
+import {
+  extractSentence,
+  getSavedWord,
+  saveEncounter,
+  type SavedWord,
+} from '@/services/vocab/vocabStore';
+import { isCJKStr } from '@/utils/lang';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -83,6 +91,14 @@ export interface DictionaryResultsState {
   isSpeaking: boolean;
   /** Pronounce the current word via Edge TTS (falling back to platform speech). */
   speakWord: () => void;
+  /** HSK/TOCFL level and frequency rank of the current word, or `null`. */
+  lexiconEntry: LexiconEntry | null;
+  /** Whether the current word is in the vocab database. */
+  savedBefore: boolean;
+  /** Whether this sentence (or, without a place in the book, the word) is already saved. */
+  isSaved: boolean;
+  /** Save the selected word with its place in the book; not offered after following a link. */
+  saveWord: () => void;
 }
 
 /**
@@ -208,6 +224,54 @@ export function useDictionaryResults({
     cancelWordPronounce();
     setIsSpeaking(false);
   }, [currentWord]);
+
+  const [lexiconEntry, setLexiconEntry] = useState<LexiconEntry | null>(null);
+  useEffect(() => {
+    setLexiconEntry(null);
+    if (!appService || !isCJKStr(currentWord)) return;
+    let cancelled = false;
+    void getLexiconEntry(appService, currentWord).then((entry) => {
+      if (!cancelled) setLexiconEntry(entry);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWord, appService]);
+
+  const [savedWord, setSavedWord] = useState<SavedWord | null>(null);
+  useEffect(() => {
+    setSavedWord(null);
+    if (!appService) return;
+    let cancelled = false;
+    void getSavedWord(appService, currentWord)
+      .then((saved) => {
+        if (!cancelled) setSavedWord(saved);
+      })
+      .catch((error: unknown) => console.warn('[vocab] failed to read', error));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWord, appService]);
+  const selectionCfi = currentSelection?.cfi;
+  const isSaved =
+    savedWord !== null &&
+    (!selectionCfi || savedWord.encounters.some((e) => e.cfi === selectionCfi));
+
+  const saveWord = useCallback(() => {
+    if (!appService) return;
+    void saveEncounter(appService, {
+      word: currentWord,
+      bookHash: currentSelection?.bookHash,
+      bookTitle: currentSelection?.bookTitle,
+      cfi: currentSelection?.cfi,
+      sentence: currentSelection
+        ? extractSentence(currentSelection.before, currentWord, currentSelection.after)
+        : undefined,
+    })
+      .then(() => getSavedWord(appService, currentWord))
+      .then(setSavedWord)
+      .catch((error: unknown) => console.warn('[vocab] failed to save', error));
+  }, [appService, currentWord, currentSelection]);
 
   const toggleExpanded = useCallback((id: string) => {
     setCards((prev) => {
@@ -452,6 +516,10 @@ export function useDictionaryResults({
     closeZoomedImage,
     isSpeaking,
     speakWord,
+    lexiconEntry,
+    savedBefore: savedWord !== null,
+    isSaved,
+    saveWord,
   };
 }
 
@@ -465,6 +533,8 @@ interface DictionaryResultsHeaderProps {
   onSpeak?: () => void;
   /** Whether pronunciation is in progress, for the active button state. */
   speaking?: boolean;
+  /** HSK/TOCFL level and frequency rank, shown after the title. */
+  lexiconEntry?: LexiconEntry | null;
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
@@ -491,27 +561,30 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           </button>
         ) : null}
       </div>
-      <div className='flex min-w-0 flex-1 items-center justify-center gap-1'>
-        {onSpeak ? (
-          <button
-            type='button'
-            aria-label={_('Speak')}
-            title={_('Speak')}
-            aria-pressed={!!speaking}
-            onClick={onSpeak}
-            className={clsx(
-              'btn btn-ghost btn-square btn-xs shrink-0',
-              speaking
-                ? 'text-base-content not-eink:animate-pulse'
-                : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
-            )}
-          >
-            <MdVolumeUp size={18} />
-          </button>
-        ) : null}
-        <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
-          {currentWord}
-        </span>
+      <div className='flex min-w-0 flex-1 items-center justify-center'>
+        {/* The word alone is centered; the speaker hangs off its start edge. */}
+        <div className='relative flex min-w-0 items-center'>
+          {onSpeak ? (
+            <button
+              type='button'
+              aria-label={_('Speak')}
+              title={_('Speak')}
+              aria-pressed={!!speaking}
+              onClick={onSpeak}
+              className={clsx(
+                'btn btn-ghost btn-square btn-xs absolute end-full me-1 shrink-0',
+                speaking
+                  ? 'text-base-content not-eink:animate-pulse'
+                  : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
+              )}
+            >
+              <MdVolumeUp size={18} />
+            </button>
+          ) : null}
+          <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
+            {currentWord}
+          </span>
+        </div>
       </div>
       <div className='flex h-8 w-8 items-center justify-center'>
         {onManage ? (
@@ -530,9 +603,13 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   );
 };
 
-interface DictionaryResultsBodyProps extends DictionaryResultsState {}
+interface DictionaryResultsBodyProps extends DictionaryResultsState {
+  /** Opens the word in Saved Words; without it, no prompt is shown. */
+  onOpenSavedWord?: (word: string) => void;
+}
 
 export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
+  currentWord,
   visibleDefinitionProviders,
   webSearchProviders,
   webSearchFirst,
@@ -546,9 +623,16 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   fontScale,
   zoomedImageSrc,
   closeZoomedImage,
+  lexiconEntry,
+  canGoBack,
+  savedBefore,
+  isSaved,
+  saveWord,
+  onOpenSavedWord,
 }) => {
   const _ = useTranslation();
   const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
+  const lexiconText = formatLexiconEntry(lexiconEntry);
 
   // `first:pt-2` keeps the leading section's tighter top padding whichever of
   // the two comes first.
@@ -658,6 +742,23 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
+        {lexiconText || lexiconEntry?.chengyu ? (
+          <div className='flex items-center gap-2 px-4 pt-2'>
+            {lexiconEntry?.chengyu && (
+              <span
+                data-testid='dict-chengyu'
+                className='badge badge-sm badge-outline badge-primary eink:border-base-content eink:text-base-content'
+              >
+                成語
+              </span>
+            )}
+            {lexiconText ? (
+              <p data-testid='dict-lexicon' className='not-eink:opacity-60 text-xs'>
+                {lexiconText}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {noProvidersAtAll ? (
           <div className='flex h-full flex-col items-center justify-center px-6 text-center'>
             <h1 className='text-base font-bold'>{_('No dictionaries enabled')}</h1>
@@ -677,6 +778,33 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
           </>
         )}
       </div>
+      {/* Only the selected word is saved; words reached through a link have no place in the book. */}
+      {!canGoBack && (
+        <div className='flex flex-col items-center gap-1.5 px-4 pb-4 pt-2'>
+          {savedBefore && onOpenSavedWord && (
+            <button
+              type='button'
+              onClick={() => onOpenSavedWord(currentWord)}
+              className='text-base-content/70 flex h-8 items-center gap-0.5 px-2 text-sm'
+            >
+              {_('Check previously saved entries')}
+              <MdChevronRight size={16} />
+            </button>
+          )}
+          {/* The same sentence can't be saved twice: daisyUI greys out the disabled button. */}
+          <button
+            type='button'
+            onClick={saveWord}
+            disabled={isSaved}
+            className='btn btn-primary w-full gap-2'
+          >
+            {savedBefore && (
+              <span aria-hidden='true' className='h-1.5 w-1.5 rounded-full bg-current' />
+            )}
+            {isSaved ? _('Saved') : _('Save')}
+          </button>
+        </div>
+      )}
       {zoomedImageSrc && (
         <ModalPortal showOverlay={false}>
           <ImageViewer

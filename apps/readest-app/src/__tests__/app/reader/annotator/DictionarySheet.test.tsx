@@ -92,6 +92,23 @@ vi.mock('@/services/tts/wordPronouncer', () => ({
   cancelWordPronounce: vi.fn(),
 }));
 
+// The vocab and lexicon databases are covered by their own tests; stub the
+// storage calls and keep the real sentence cutting.
+vi.mock('@/services/vocab/vocabStore', async () => {
+  const actual = await vi.importActual<typeof import('@/services/vocab/vocabStore')>(
+    '@/services/vocab/vocabStore',
+  );
+  return {
+    ...actual,
+    getSavedWord: vi.fn().mockResolvedValue(null),
+    saveEncounter: vi.fn().mockResolvedValue(undefined),
+  };
+});
+vi.mock('@/services/lexicon/lexicon', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/lexicon/lexicon')>()),
+  getLexiconEntry: vi.fn().mockResolvedValue(null),
+}));
+
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
@@ -137,12 +154,15 @@ vi.mock('@/services/dictionaries/registry', () => ({
 
 // EnvProvider needs an appService; provide one with the file API the
 // (unmocked) StarDict provider uses for fixture reads.
-vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({
+// One env object for all renders, like the real context: effects keyed on
+// `appService` must not rerun on every render.
+vi.mock('@/context/EnvContext', () => {
+  const env = {
     envConfig: { getAppService: vi.fn().mockResolvedValue(null) },
     appService: { openFile: vi.fn() },
-  }),
-}));
+  };
+  return { useEnv: () => env };
+});
 
 // ---------------------------------------------------------------------------
 // Fixture-backed real providers
@@ -309,6 +329,8 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
+import { getSavedWord, saveEncounter } from '@/services/vocab/vocabStore';
+import { getLexiconEntry } from '@/services/lexicon/lexicon';
 
 const renderSheet = (
   props: Partial<{
@@ -317,6 +339,7 @@ const renderSheet = (
     selection: DictionarySelectionContext;
     onDismiss: () => void;
     onManage: () => void;
+    onOpenSavedWord: (word: string) => void;
   }> = {},
 ) =>
   render(
@@ -326,6 +349,7 @@ const renderSheet = (
       selection={props.selection}
       onDismiss={props.onDismiss ?? (() => {})}
       onManage={props.onManage}
+      onOpenSavedWord={props.onOpenSavedWord}
     />,
   );
 
@@ -366,6 +390,33 @@ describe('DictionarySheet — header', () => {
   });
 });
 
+describe('DictionarySheet — chengyu badge', () => {
+  const entry = { hsk: 7, tocfl: null, rank: null, english: null, zhuyin: null, pinyin: null };
+
+  afterEach(() => {
+    vi.mocked(getLexiconEntry).mockResolvedValue(null);
+  });
+
+  it('marks an idiom, before its lexicon line', async () => {
+    vi.mocked(getLexiconEntry).mockResolvedValue({ ...entry, chengyu: true });
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: '一毛不拔' });
+
+    const badge = await waitFor(() => screen.getByTestId('dict-chengyu'));
+    expect(badge.textContent).toBe('成語');
+    expect(badge.nextElementSibling).toBe(screen.getByTestId('dict-lexicon'));
+  });
+
+  it('leaves other words unmarked', async () => {
+    vi.mocked(getLexiconEntry).mockResolvedValue({ ...entry, chengyu: false });
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: '驚奇' });
+
+    await waitFor(() => screen.getByTestId('dict-lexicon'));
+    expect(screen.queryByTestId('dict-chengyu')).toBeNull();
+  });
+});
+
 describe('DictionarySheet — speak button', () => {
   it('warms audio and pronounces the current word when the speaker is tapped', async () => {
     providersForNextRender.push(buildRealStarDictProvider());
@@ -381,6 +432,122 @@ describe('DictionarySheet — speak button', () => {
       expect.any(Object),
       expect.any(Function),
     );
+  });
+});
+
+describe('DictionarySheet — save button', () => {
+  const selection = {
+    before: '他走了。他說，',
+    after: '來了嗎？我不知道。',
+    bookTitle: '巧克力冒險工廠',
+    bookHash: 'abc',
+    cfi: 'epubcfi(/6/4!/4/2)',
+  };
+
+  const savedAt = (cfi: string) => ({
+    word: '老闆',
+    createdAt: 1,
+    encounters: [
+      { bookHash: 'abc', bookTitle: '巧克力冒險工廠', cfi, sentence: null, createdAt: 1 },
+    ],
+  });
+  const prompt = () => screen.queryByRole('button', { name: 'Check previously saved entries' });
+  const dot = (button: HTMLElement) => button.querySelector('span[aria-hidden="true"]');
+
+  beforeEach(() => {
+    vi.mocked(getSavedWord).mockReset().mockResolvedValue(null);
+    vi.mocked(saveEncounter).mockClear();
+  });
+
+  it('shows a plain Save and no prompt for a new word', async () => {
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection, onOpenSavedWord: vi.fn() });
+
+    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
+    expect((save as HTMLButtonElement).disabled).toBe(false);
+    expect(dot(save)).toBeNull();
+    expect(prompt()).toBeNull();
+  });
+
+  it('offers Save again, marked, for a word saved from another sentence', async () => {
+    vi.mocked(getSavedWord).mockResolvedValue(savedAt('epubcfi(/6/8!/4/6)'));
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection, onOpenSavedWord: vi.fn() });
+
+    await waitFor(() => expect(prompt()).not.toBeNull());
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect((save as HTMLButtonElement).disabled).toBe(false);
+    expect(dot(save)).not.toBeNull();
+  });
+
+  it('greys out Saved when this sentence was saved before', async () => {
+    vi.mocked(getSavedWord).mockResolvedValue(savedAt(selection.cfi));
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection, onOpenSavedWord: vi.fn() });
+
+    const saved = await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
+    expect((saved as HTMLButtonElement).disabled).toBe(true);
+    expect(dot(saved)).not.toBeNull();
+    expect(prompt()).not.toBeNull();
+  });
+
+  it('opens the word in Saved Words from the prompt', async () => {
+    const onOpenSavedWord = vi.fn();
+    vi.mocked(getSavedWord).mockResolvedValue(savedAt('epubcfi(/6/8!/4/6)'));
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection, onOpenSavedWord });
+
+    fireEvent.click(
+      await waitFor(() => screen.getByRole('button', { name: 'Check previously saved entries' })),
+    );
+    expect(onOpenSavedWord).toHaveBeenCalledWith('老闆');
+  });
+
+  it('shows no prompt when the host gives no way to open Saved Words', async () => {
+    vi.mocked(getSavedWord).mockResolvedValue(savedAt('epubcfi(/6/8!/4/6)'));
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(dot(save)).not.toBeNull());
+    expect(prompt()).toBeNull();
+  });
+
+  it('saves the selected word with its book, place and sentence', async () => {
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
+    vi.mocked(getSavedWord).mockResolvedValue(savedAt(selection.cfi));
+    await act(async () => {
+      fireEvent.click(save);
+    });
+
+    expect(saveEncounter).toHaveBeenCalledWith(expect.anything(), {
+      word: '老闆',
+      bookHash: 'abc',
+      bookTitle: '巧克力冒險工廠',
+      cfi: 'epubcfi(/6/4!/4/2)',
+      sentence: '他說，老闆來了嗎？',
+    });
+    const saved = await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
+    expect((saved as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('offers no Save for a word reached through a dictionary link', async () => {
+    providersForNextRender.push(buildNavProvider('郊區'));
+    renderSheet({ word: '老闆', selection });
+
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
+    await act(async () => {
+      fireEvent.click(navLink);
+    });
+    await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('郊區'));
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Back'));
+    await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('老闆'));
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   });
 });
 

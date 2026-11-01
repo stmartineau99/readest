@@ -16,6 +16,7 @@ interface DictionarySheetProps {
   selection?: DictionarySelectionContext;
   onDismiss: () => void;
   onManage?: () => void;
+  onOpenSavedWord?: (word: string) => void;
 }
 
 const DictionarySheet: React.FC<DictionarySheetProps> = ({
@@ -24,6 +25,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   selection,
   onDismiss,
   onManage,
+  onOpenSavedWord,
 }) => {
   const state = useDictionaryResults({ word, lang, selection });
   return (
@@ -48,7 +50,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
       contentClassName='px-0! mt-0!'
       onClose={onDismiss}
     >
-      <DictionaryResultsBody {...state} />
+      <DictionaryResultsBody {...state} onOpenSavedWord={onOpenSavedWord} />
     </Dialog>
   );
 };

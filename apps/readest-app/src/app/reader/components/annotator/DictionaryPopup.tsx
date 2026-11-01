@@ -26,6 +26,8 @@ interface DictionaryPopupProps {
    * deep-linking to the dictionaries sub-page.
    */
   onManage?: () => void;
+  /** Invoked from the "Check previously saved entries" prompt. */
+  onOpenSavedWord?: (word: string) => void;
 }
 
 const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
@@ -38,6 +40,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   popupHeight,
   onDismiss,
   onManage,
+  onOpenSavedWord,
 }) => {
   const state = useDictionaryResults({ word, lang, selection });
   return (
@@ -62,7 +65,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           speaking={state.isSpeaking}
         />
         <div className='min-h-0 flex-1'>
-          <DictionaryResultsBody {...state} />
+          <DictionaryResultsBody {...state} onOpenSavedWord={onOpenSavedWord} />
         </div>
       </div>
     </Popup>
