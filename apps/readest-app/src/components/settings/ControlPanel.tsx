@@ -30,6 +30,7 @@ import { canShareText } from '@/utils/share';
 import { useEinkRefreshSupported } from '@/hooks/useEinkRefreshSupported';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import KeyboardShortcutsSettings from './KeyboardShortcutsSettings';
+import { applyMinimalPreset } from '@/services/minimal/minimalMode';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -90,6 +91,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
   const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
+  const [minimalMode, setMinimalMode] = useState(settings.minimalMode);
   const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
     settings.hideBookshelfPageButtons,
   );
@@ -377,6 +379,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [reverseWheelPaging]);
 
   useEffect(() => {
+    if (minimalMode === settings.minimalMode) return;
+    saveSysSettings(envConfig, 'minimalMode', minimalMode).then(() =>
+      applyMinimalPreset(envConfig, minimalMode),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minimalMode]);
+
+  useEffect(() => {
     if (hideBookshelfPageButtons === settings.hideBookshelfPageButtons) return;
     saveSysSettings(envConfig, 'hideBookshelfPageButtons', hideBookshelfPageButtons);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -478,6 +488,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   return (
     <div className='my-4 w-full space-y-6'>
+      <BoxedList title={_('Minimal')} data-setting-id='settings.control.minimalMode'>
+        <SettingsSwitchRow
+          label={_('Minimal Mode')}
+          description={_('Hide reading modes and the selection toolbar')}
+          checked={minimalMode}
+          onChange={() => setMinimalMode(!minimalMode)}
+        />
+      </BoxedList>
       <BoxedList title={_('Scroll')} data-setting-id='settings.control.scrolledMode'>
         <SettingsSwitchRow
           label={_('Scrolled Mode')}

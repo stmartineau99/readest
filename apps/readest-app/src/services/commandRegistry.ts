@@ -447,6 +447,12 @@ const colorPanelItems = [
 // control panel items
 const controlPanelItems = [
   {
+    id: 'settings.control.minimalMode',
+    labelKey: _('Minimal Mode'),
+    keywords: ['minimal', 'simple', 'toolbar', 'paragraph', 'speed', 'margins'],
+    section: 'Minimal',
+  },
+  {
     id: 'settings.control.scrolledMode',
     labelKey: _('Scrolled Mode'),
     keywords: ['scroll', 'scrolled', 'mode', 'paginate', 'continuous'],

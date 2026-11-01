@@ -497,6 +497,8 @@ export interface SystemSettings {
   gamepadEnabled: boolean;
   /** Mouse wheel down turns to the previous page in paginated mode (#6439). */
   reverseWheelPaging: boolean;
+  /** Fork: hide reading modes and the selection toolbar, one margin set. */
+  minimalMode: boolean;
   /** Hide the e-ink library's Previous/Next buttons; keys still page. */
   hideBookshelfPageButtons: boolean;
   alwaysShowStatusBar: boolean;
