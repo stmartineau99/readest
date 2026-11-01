@@ -134,7 +134,7 @@ describe('SavedWordsDialog', () => {
     );
   });
 
-  const openDialog = async () => {
+  const openDialog = async (word?: string) => {
     const { default: SavedWordsDialog, setSavedWordsDialogVisible } = await import(
       '@/components/vocab/SavedWordsDialog'
     );
@@ -143,8 +143,17 @@ describe('SavedWordsDialog', () => {
         <SavedWordsDialog />
       </DropdownProvider>,
     );
-    await act(async () => setSavedWordsDialogVisible(true));
+    await act(async () => setSavedWordsDialogVisible(true, word));
   };
+
+  it('opens on All words with a given word expanded', async () => {
+    await openDialog('驚奇');
+    const row = (await screen.findByText('to be amazed')).closest('button')!;
+    expect(screen.getByRole('button', { name: 'All words' })).toBeTruthy();
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText((_t, el) => el?.textContent === '他驚奇地看著。')).toBeTruthy();
+    expect(screen.getByText('fox').closest('button')!.getAttribute('aria-expanded')).toBe('false');
+  });
 
   const openBook = async (title: string) => {
     fireEvent.click(await screen.findByText(title));

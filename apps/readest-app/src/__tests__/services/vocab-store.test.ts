@@ -4,6 +4,7 @@ import { migrate } from '@/services/database/migrate';
 import { getMigrations } from '@/services/database/migrations';
 import {
   extractSentence,
+  getSavedWord,
   isWordSaved,
   listSavedWords,
   saveEncounter,
@@ -173,6 +174,43 @@ describe('vocabStore', () => {
       expect(await listSavedWords(appService)).toEqual([
         { word: '郊區', createdAt: 1000, encounters: [] },
       ]);
+    });
+
+    test('getSavedWord returns one word with its encounters newest first', async () => {
+      await saveAt(1000, { word: '老闆', bookHash: 'h1', bookTitle: '巧克力冒險工廠', cfi: 'c1' });
+      await saveAt(2000, { word: '櫥窗', bookHash: 'h1', bookTitle: '巧克力冒險工廠', cfi: 'c2' });
+      await saveAt(3000, {
+        word: '老闆',
+        bookHash: 'h2',
+        bookTitle: '另一本書',
+        cfi: 'c3',
+        sentence: '老闆笑了。',
+      });
+
+      expect(await getSavedWord(appService, '老闆')).toEqual({
+        word: '老闆',
+        createdAt: 1000,
+        encounters: [
+          {
+            bookHash: 'h2',
+            bookTitle: '另一本書',
+            cfi: 'c3',
+            sentence: '老闆笑了。',
+            createdAt: 3000,
+          },
+          {
+            bookHash: 'h1',
+            bookTitle: '巧克力冒險工廠',
+            cfi: 'c1',
+            sentence: null,
+            createdAt: 1000,
+          },
+        ],
+      });
+    });
+
+    test('getSavedWord returns null for a word that is not saved', async () => {
+      expect(await getSavedWord(appService, '老闆')).toBeNull();
     });
   });
 

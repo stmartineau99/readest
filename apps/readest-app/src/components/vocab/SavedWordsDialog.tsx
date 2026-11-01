@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MdChevronLeft, MdChevronRight, MdFilterList } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import Dropdown from '@/components/Dropdown';
@@ -18,11 +18,12 @@ import SavedWordsFilters, {
 import { MOCK_SAVED_WORDS } from './mockSavedWords';
 import ToneColoredWord from './ToneColoredWord';
 
-export const setSavedWordsDialogVisible = (visible: boolean) => {
+/** With `word`, the dialog opens on All words with that word's sentences expanded. */
+export const setSavedWordsDialogVisible = (visible: boolean, word?: string) => {
   const dialog = document.getElementById('saved_words_window');
   if (dialog) {
     const event = new CustomEvent('setDialogVisibility', {
-      detail: { visible },
+      detail: { visible, word },
     });
     dialog.dispatchEvent(event);
   }
@@ -56,8 +57,14 @@ const SavedWordItem: React.FC<{
   lexicon: LexiconEntry | null | undefined;
   expanded: boolean;
   onToggle: () => void;
-}> = ({ saved, lexicon, expanded, onToggle }) => {
+  /** Scrolled into view when the dialog opens on this word. */
+  focused?: boolean;
+}> = ({ saved, lexicon, expanded, onToggle, focused }) => {
   const _ = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focused) ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [focused]);
   const { word, encounters } = saved;
   // The rank is left to the dictionary card.
   const levels = [
@@ -69,7 +76,7 @@ const SavedWordItem: React.FC<{
   const canExpand = encounters.length > 0;
 
   return (
-    <div>
+    <div ref={ref}>
       <button
         type='button'
         className='flex min-h-14 w-full items-center gap-3 py-2.5 pe-4 text-start'
@@ -140,14 +147,18 @@ const SavedWordItem: React.FC<{
   );
 };
 
-const SavedWordsContent: React.FC = () => {
+const SavedWordsContent: React.FC<{ focusWord: string | null }> = ({ focusWord }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const [data, setData] = useState<SavedWordsData | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(focusWord ? [focusWord] : []),
+  );
   const [filter, setFilter] = useState<SavedWordsFilter>(EMPTY_FILTER);
-  const [view, setView] = useState<SavedWordsView>({ kind: 'books' });
+  const [view, setView] = useState<SavedWordsView>(
+    focusWord ? { kind: 'words', book: null } : { kind: 'books' },
+  );
 
   useEffect(() => {
     if (!appService) return;
@@ -272,6 +283,7 @@ const SavedWordsContent: React.FC = () => {
             lexicon={data.lexicon.get(saved.word)}
             expanded={expanded.has(saved.word)}
             onToggle={() => toggle(saved.word)}
+            focused={saved.word === focusWord}
           />
         ))}
       </BoxedList>
@@ -282,9 +294,11 @@ const SavedWordsContent: React.FC = () => {
 export const SavedWordsDialog: React.FC = () => {
   const _ = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [focusWord, setFocusWord] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
+      setFocusWord(event.detail.word ?? null);
       setIsOpen(event.detail.visible);
     };
 
@@ -310,7 +324,7 @@ export const SavedWordsDialog: React.FC = () => {
       boxClassName='sm:h-[85%]! sm:w-[560px]! sm:max-w-(--breakpoint-sm)!'
       contentClassName='px-4! sm:px-6! font-light'
     >
-      {isOpen && <SavedWordsContent />}
+      {isOpen && <SavedWordsContent focusWord={focusWord} />}
     </Dialog>
   );
 };

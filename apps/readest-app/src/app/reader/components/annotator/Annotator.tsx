@@ -98,6 +98,7 @@ import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
+import { setSavedWordsDialogVisible } from '@/components/vocab/SavedWordsDialog';
 import NoteEditorSheet from './NoteEditorSheet';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -2746,6 +2747,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             setActiveSettingsItemId('settings.language.dictionaries.manage');
             setSettingsDialogOpen(true);
           };
+          const onOpenSavedWord = (savedWord: string) => {
+            handleDismissPopupAndSelection();
+            setSavedWordsDialogVisible(true, savedWord);
+          };
           if (useSheet) {
             return (
               <DictionarySheet
@@ -2754,6 +2759,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
                 selection={dictionarySelection}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
+                onOpenSavedWord={onOpenSavedWord}
               />
             );
           }
@@ -2769,6 +2775,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
               popupHeight={dictPopupHeight}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
+              onOpenSavedWord={onOpenSavedWord}
             />
           );
         })()}

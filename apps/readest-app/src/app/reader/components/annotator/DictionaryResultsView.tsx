@@ -17,7 +17,12 @@ import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates'
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { formatLexiconEntry, getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
-import { extractSentence, isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
+import {
+  extractSentence,
+  getSavedWord,
+  saveEncounter,
+  type SavedWord,
+} from '@/services/vocab/vocabStore';
 import { isCJKStr } from '@/utils/lang';
 import {
   getBuiltinWebSearch,
@@ -89,6 +94,8 @@ export interface DictionaryResultsState {
   /** HSK/TOCFL level and frequency rank of the current word, or `null`. */
   lexiconEntry: LexiconEntry | null;
   /** Whether the current word is in the vocab database. */
+  savedBefore: boolean;
+  /** Whether this sentence (or, without a place in the book, the word) is already saved. */
   isSaved: boolean;
   /** Save the selected word with its place in the book; not offered after following a link. */
   saveWord: () => void;
@@ -231,20 +238,24 @@ export function useDictionaryResults({
     };
   }, [currentWord, appService]);
 
-  const [isSaved, setIsSaved] = useState(false);
+  const [savedWord, setSavedWord] = useState<SavedWord | null>(null);
   useEffect(() => {
-    setIsSaved(false);
+    setSavedWord(null);
     if (!appService) return;
     let cancelled = false;
-    void isWordSaved(appService, currentWord)
+    void getSavedWord(appService, currentWord)
       .then((saved) => {
-        if (!cancelled) setIsSaved(saved);
+        if (!cancelled) setSavedWord(saved);
       })
       .catch((error: unknown) => console.warn('[vocab] failed to read', error));
     return () => {
       cancelled = true;
     };
   }, [currentWord, appService]);
+  const selectionCfi = currentSelection?.cfi;
+  const isSaved =
+    savedWord !== null &&
+    (!selectionCfi || savedWord.encounters.some((e) => e.cfi === selectionCfi));
 
   const saveWord = useCallback(() => {
     if (!appService) return;
@@ -257,7 +268,8 @@ export function useDictionaryResults({
         ? extractSentence(currentSelection.before, currentWord, currentSelection.after)
         : undefined,
     })
-      .then(() => setIsSaved(true))
+      .then(() => getSavedWord(appService, currentWord))
+      .then(setSavedWord)
       .catch((error: unknown) => console.warn('[vocab] failed to save', error));
   }, [appService, currentWord, currentSelection]);
 
@@ -505,6 +517,7 @@ export function useDictionaryResults({
     isSpeaking,
     speakWord,
     lexiconEntry,
+    savedBefore: savedWord !== null,
     isSaved,
     saveWord,
   };
@@ -590,9 +603,13 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   );
 };
 
-interface DictionaryResultsBodyProps extends DictionaryResultsState {}
+interface DictionaryResultsBodyProps extends DictionaryResultsState {
+  /** Opens the word in Saved Words; without it, no prompt is shown. */
+  onOpenSavedWord?: (word: string) => void;
+}
 
 export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
+  currentWord,
   visibleDefinitionProviders,
   webSearchProviders,
   webSearchFirst,
@@ -608,8 +625,10 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   closeZoomedImage,
   lexiconEntry,
   canGoBack,
+  savedBefore,
   isSaved,
   saveWord,
+  onOpenSavedWord,
 }) => {
   const _ = useTranslation();
   const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
@@ -761,18 +780,27 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
       </div>
       {/* Only the selected word is saved; words reached through a link have no place in the book. */}
       {!canGoBack && (
-        <div className='px-4 pb-4 pt-2'>
-          {/* aria-disabled, not disabled: daisyUI greys out disabled buttons, and
-              the saved state keeps the accent as an outline. */}
+        <div className='flex flex-col items-center gap-1.5 px-4 pb-4 pt-2'>
+          {savedBefore && onOpenSavedWord && (
+            <button
+              type='button'
+              onClick={() => onOpenSavedWord(currentWord)}
+              className='text-base-content/70 flex h-8 items-center gap-0.5 px-2 text-sm'
+            >
+              {_('Check previously saved entries')}
+              <MdChevronRight size={16} />
+            </button>
+          )}
+          {/* The same sentence can't be saved twice: daisyUI greys out the disabled button. */}
           <button
             type='button'
-            onClick={isSaved ? undefined : saveWord}
-            aria-disabled={isSaved}
-            className={clsx(
-              'btn w-full',
-              isSaved ? 'btn-outline btn-primary pointer-events-none' : 'btn-primary',
-            )}
+            onClick={saveWord}
+            disabled={isSaved}
+            className='btn btn-primary w-full gap-2'
           >
+            {savedBefore && (
+              <span aria-hidden='true' className='h-1.5 w-1.5 rounded-full bg-current' />
+            )}
             {isSaved ? _('Saved') : _('Save')}
           </button>
         </div>

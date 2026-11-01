@@ -83,42 +83,62 @@ export interface SavedWord {
   encounters: SavedEncounter[];
 }
 
-interface SavedWordRow extends DatabaseRow {
-  word: string;
-  word_created_at: number;
+interface EncounterRow extends DatabaseRow {
   book_hash: string | null;
   book_title: string | null;
-  cfi: string | null;
+  cfi: string;
   sentence: string | null;
-  created_at: number | null;
+  created_at: number;
 }
 
-/** Every saved word, newest first, each with its encounters, newest first. */
+const toEncounter = (row: EncounterRow): SavedEncounter => ({
+  bookHash: row.book_hash,
+  bookTitle: row.book_title,
+  cfi: row.cfi,
+  sentence: row.sentence,
+  createdAt: row.created_at,
+});
+
+/**
+ * Every saved word, newest first, each with its encounters, newest first.
+ * Two plain queries: the browser's wasm engine fails on a LEFT JOIN of the two tables.
+ */
 export const listSavedWords = (appService: VocabAppService): Promise<SavedWord[]> =>
   withDb(appService, async (db) => {
-    const rows = await db.select<SavedWordRow>(
-      `SELECT w.word, w.created_at AS word_created_at,
-              e.book_hash, e.book_title, e.cfi, e.sentence, e.created_at
-       FROM words w LEFT JOIN encounters e ON e.word = w.word
-       ORDER BY w.created_at DESC, w.word, e.created_at DESC`,
+    const wordRows = await db.select<{ word: string; created_at: number }>(
+      'SELECT word, created_at FROM words ORDER BY created_at DESC, word',
     );
-    const words = new Map<string, SavedWord>();
-    for (const row of rows) {
-      let saved = words.get(row.word);
-      if (!saved) {
-        saved = { word: row.word, createdAt: row.word_created_at, encounters: [] };
-        words.set(row.word, saved);
-      }
-      if (row.cfi === null) continue;
-      saved.encounters.push({
-        bookHash: row.book_hash,
-        bookTitle: row.book_title,
-        cfi: row.cfi,
-        sentence: row.sentence,
-        createdAt: row.created_at!,
-      });
-    }
+    const encounterRows = await db.select<EncounterRow & { word: string }>(
+      `SELECT word, book_hash, book_title, cfi, sentence, created_at FROM encounters
+       ORDER BY created_at DESC`,
+    );
+    const words = new Map<string, SavedWord>(
+      wordRows.map((row) => [
+        row.word,
+        { word: row.word, createdAt: row.created_at, encounters: [] },
+      ]),
+    );
+    for (const row of encounterRows) words.get(row.word)?.encounters.push(toEncounter(row));
     return [...words.values()];
+  });
+
+/** One saved word with its encounters, newest first; null when it isn't saved. */
+export const getSavedWord = (
+  appService: VocabAppService,
+  word: string,
+): Promise<SavedWord | null> =>
+  withDb(appService, async (db) => {
+    const words = await db.select<{ created_at: number }>(
+      'SELECT created_at FROM words WHERE word = ?',
+      [word],
+    );
+    if (!words[0]) return null;
+    const rows = await db.select<EncounterRow>(
+      `SELECT book_hash, book_title, cfi, sentence, created_at FROM encounters
+       WHERE word = ? ORDER BY created_at DESC`,
+      [word],
+    );
+    return { word, createdAt: words[0].created_at, encounters: rows.map(toEncounter) };
   });
 
 // A sentence ends at 。！？, optionally followed by a closing 」.
