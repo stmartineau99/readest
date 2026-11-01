@@ -131,11 +131,9 @@ import {
   parseReadEraBackup,
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
-
-// The selection toolbar is hidden; long press opens the dictionary instead.
-const SHOW_ANNOTATION_TOOLBAR = false;
 
 const isSameRange = (a: Range, b: Range) =>
   a.startContainer === b.startContainer &&
@@ -1256,7 +1254,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           break;
         case 'dictionary':
           // A dictionary lookup only makes sense for a single word (or a short
-          // CJK term); a longer selection stays selected with no toolbar.
+          // CJK term); on a longer selection fall back to the annotation
+          // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
             // Drop the selection for as long as the lookup is up, so iOS's
@@ -1276,6 +1275,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             if (selection.popup) {
               selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
             }
+          } else if (!isMinimalMode()) {
+            handleShowAnnotPopup();
           }
           break;
         case 'translate':
@@ -2797,7 +2798,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           onCancel={handleCancelNote}
         />
       )}
-      {SHOW_ANNOTATION_TOOLBAR &&
+      {!isMinimalMode() &&
         showAnnotPopup &&
         !noteEditorInSheet &&
         trianglePosition &&

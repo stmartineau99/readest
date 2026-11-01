@@ -319,7 +319,6 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-// test.skip: these need the selection toolbar, which this fork hides (SHOW_ANNOTATION_TOOLBAR in Annotator.tsx).
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],
@@ -351,7 +350,7 @@ describe('a lookup surface survives the selection it is anchored to being republ
  * threw on `word.trim()`, taking the whole reader down to the error page.
  */
 describe('a lookup surface closes when its selection is cleared', () => {
-  test.skip.each([
+  test.each([
     ['onDictionarySelection', 'dictionary-surface'],
     ['onTranslateSelection', 'translator-surface'],
     ['onProofreadSelection', 'proofread-surface'],
@@ -478,7 +477,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
     expect(h.isTextSelected.current).toBe(false);
   });
 
-  test.skip('restores the selection and returns the toolbar on dismiss', async () => {
+  test('restores the selection and returns the toolbar on dismiss', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     const range = await selectWord();
 
@@ -498,7 +497,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
   // re-armed the once-per-gesture latch that would otherwise have swallowed it.
   // The restored selection carries `quickActionHandled` so a republish of it can
   // never fire the lookup again.
-  test.skip('a republish of the handed-back selection does not re-open the lookup', async () => {
+  test('a republish of the handed-back selection does not re-open the lookup', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     // The section load is what registers the pointerdown listener that re-arms
     // the quick action for each new gesture.
@@ -731,7 +730,7 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
   });
 
-  test.skip('a report taken mid-drag still opens the toolbar', async () => {
+  test('a report taken mid-drag still opens the toolbar', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup();
 
@@ -757,7 +756,7 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });
 
-  test.skip('a highlight quick action mid-drag still opens the toolbar', async () => {
+  test('a highlight quick action mid-drag still opens the toolbar', async () => {
     h.viewSettings.annotationQuickAction = 'highlight';
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup();
@@ -767,7 +766,7 @@ describe('quick actions run on a selection made in the footnote popup', () => {
   });
 
   // Read-aloud is disabled for popup selections, so it keeps the toolbar.
-  test.skip('the tts quick action keeps the toolbar', async () => {
+  test('the tts quick action keeps the toolbar', async () => {
     h.viewSettings.annotationQuickAction = 'tts';
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup({ quickAction: true });
