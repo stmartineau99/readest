@@ -16,7 +16,7 @@ import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
-import { getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
+import { formatLexiconEntry, getLexiconEntry, type LexiconEntry } from '@/services/lexicon/lexicon';
 import { extractSentence, isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
 import { isCJKStr } from '@/utils/lang';
 import {
@@ -509,16 +509,6 @@ export function useDictionaryResults({
     saveWord,
   };
 }
-
-const formatLexiconEntry = (entry: LexiconEntry | null | undefined): string => {
-  if (!entry) return '';
-  const parts = [
-    entry.hsk !== null ? `HSK ${entry.hsk === 7 ? '7–9' : entry.hsk}` : '',
-    entry.tocfl !== null ? `TOCFL ${entry.tocfl}` : '',
-    entry.rank !== null ? `#${entry.rank.toLocaleString()}` : '',
-  ];
-  return parts.filter(Boolean).join(' · ');
-};
 
 interface DictionaryResultsHeaderProps {
   headerClassName?: string;

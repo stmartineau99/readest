@@ -1,6 +1,6 @@
 /**
- * Read-only lexicon of HSK 3.0 level, TOCFL level, Taiwan frequency rank and
- * English gloss per traditional word. Built outside the repo by
+ * Read-only lexicon of HSK 3.0 level, TOCFL level, Taiwan frequency rank,
+ * English gloss and reading per traditional word. Built outside the repo by
  * ~/Documents/Chinese/lexicon/build_lexicon.py, bundled into
  * public/dictionaries/ by scripts/copy-dictionaries.mjs and installed into
  * Data on first use. The build writes LEXICON_VERSION as `user_version`;
@@ -9,7 +9,7 @@
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
-const LEXICON_VERSION = 2;
+const LEXICON_VERSION = 3;
 const LEXICON_FILE = 'lexicon.db';
 
 type LexiconAppService = Pick<
@@ -26,6 +26,10 @@ export interface LexiconEntry {
   rank: number | null;
   /** English gloss, as on the bundled MoeDict's EN line; null = none. */
   english: string | null;
+  /** MoeDict zhuyin, several readings joined with " / "; null = not in MoeDict. */
+  zhuyin: string | null;
+  /** MoeDict pinyin, in the same order as `zhuyin`. */
+  pinyin: string | null;
 }
 
 interface LexiconRow extends DatabaseRow, LexiconEntry {}
@@ -74,9 +78,29 @@ export const getLexiconEntry = async (
   const db = await ensureLexicon(appService);
   if (!db) return null;
   const rows = await db.select<LexiconRow>(
-    'SELECT hsk, tocfl, rank, english FROM lexicon WHERE word = ?',
+    'SELECT hsk, tocfl, rank, english, zhuyin, pinyin FROM lexicon WHERE word = ?',
     [word],
   );
   const row = rows[0];
-  return row ? { hsk: row.hsk, tocfl: row.tocfl, rank: row.rank, english: row.english } : null;
+  return row
+    ? {
+        hsk: row.hsk,
+        tocfl: row.tocfl,
+        rank: row.rank,
+        english: row.english,
+        zhuyin: row.zhuyin,
+        pinyin: row.pinyin,
+      }
+    : null;
+};
+
+/** `HSK 3 · TOCFL 2 · #1,288`, leaving out the parts the word lacks. */
+export const formatLexiconEntry = (entry: LexiconEntry | null | undefined): string => {
+  if (!entry) return '';
+  const parts = [
+    entry.hsk !== null ? `HSK ${entry.hsk === 7 ? '7–9' : entry.hsk}` : '',
+    entry.tocfl !== null ? `TOCFL ${entry.tocfl}` : '',
+    entry.rank !== null ? `#${entry.rank.toLocaleString()}` : '',
+  ];
+  return parts.filter(Boolean).join(' · ');
 };

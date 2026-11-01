@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { migrate } from '@/services/database/migrate';
 import { getMigrations } from '@/services/database/migrations';
-import { extractSentence, isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
+import {
+  extractSentence,
+  isWordSaved,
+  listSavedWords,
+  saveEncounter,
+} from '@/services/vocab/vocabStore';
 import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
@@ -92,6 +97,83 @@ describe('vocabStore', () => {
     await saveEncounter(appService, { word: '郊區' });
     expect(await isWordSaved(appService, '郊區')).toBe(true);
     expect(await encounters()).toEqual([]);
+  });
+
+  describe('listSavedWords', () => {
+    // created_at comes from Date.now(); step the clock so the order is fixed.
+    const saveAt = async (time: number, encounter: Parameters<typeof saveEncounter>[1]) => {
+      vi.setSystemTime(time);
+      await saveEncounter(appService, encounter);
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('lists words newest first, each with its encounters newest first', async () => {
+      await saveAt(1000, {
+        word: '老闆',
+        bookHash: 'h1',
+        bookTitle: '巧克力冒險工廠',
+        cfi: 'epubcfi(/6/4!/4/2)',
+        sentence: '老闆來了。',
+      });
+      await saveAt(2000, { word: '櫥窗', bookHash: 'h1', bookTitle: '巧克力冒險工廠', cfi: 'c2' });
+      await saveAt(3000, {
+        word: '老闆',
+        bookHash: 'h2',
+        bookTitle: '另一本書',
+        cfi: 'epubcfi(/6/8!/4/6)',
+        sentence: '老闆笑了。',
+      });
+
+      expect(await listSavedWords(appService)).toEqual([
+        {
+          word: '櫥窗',
+          createdAt: 2000,
+          encounters: [
+            {
+              bookHash: 'h1',
+              bookTitle: '巧克力冒險工廠',
+              cfi: 'c2',
+              sentence: null,
+              createdAt: 2000,
+            },
+          ],
+        },
+        {
+          word: '老闆',
+          createdAt: 1000,
+          encounters: [
+            {
+              bookHash: 'h2',
+              bookTitle: '另一本書',
+              cfi: 'epubcfi(/6/8!/4/6)',
+              sentence: '老闆笑了。',
+              createdAt: 3000,
+            },
+            {
+              bookHash: 'h1',
+              bookTitle: '巧克力冒險工廠',
+              cfi: 'epubcfi(/6/4!/4/2)',
+              sentence: '老闆來了。',
+              createdAt: 1000,
+            },
+          ],
+        },
+      ]);
+    });
+
+    test('lists a word without a place with no encounters', async () => {
+      await saveAt(1000, { word: '郊區' });
+      expect(await listSavedWords(appService)).toEqual([
+        { word: '郊區', createdAt: 1000, encounters: [] },
+      ]);
+    });
   });
 
   test('opens vocab.db in Documents on iOS and in Data elsewhere', async () => {
