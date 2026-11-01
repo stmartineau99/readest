@@ -34,7 +34,7 @@ interface SavedWordsData {
   lexicon: Map<string, LexiconEntry | null>;
 }
 
-/** The sentence with every occurrence of `word` darker and a weight above the muted, extralight sentence. */
+/** The sentence with every occurrence of `word` a weight above the extralight sentence. */
 const HighlightedSentence: React.FC<{ sentence: string; word: string }> = ({ sentence, word }) => {
   const parts = sentence.split(word);
   return (
@@ -112,7 +112,7 @@ const SavedWordItem: React.FC<{
         <ul className='bg-base-200 divide-base-300 border-base-300 -ms-4 divide-y border-t'>
           {encounters.map((encounter) => (
             <li key={encounter.cfi} className='flex flex-col gap-1 py-3 pe-4 ps-8'>
-              <span className='text-base-content/70 text-[0.95em] font-extralight leading-relaxed'>
+              <span className='text-base-content text-[0.95em] font-extralight leading-relaxed'>
                 {encounter.sentence ? (
                   <HighlightedSentence sentence={encounter.sentence} word={word} />
                 ) : (
