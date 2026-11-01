@@ -28,12 +28,12 @@ type PresetKey =
 type ViewPreset = Pick<ViewSettings, PresetKey>;
 
 export const MINIMAL_VIEW_PRESET: ViewPreset = {
-  marginTopPx: 60,
-  marginBottomPx: 60,
+  marginTopPx: 80,
+  marginBottomPx: 80,
   marginLeftPx: 32,
   marginRightPx: 32,
-  compactMarginTopPx: 60,
-  compactMarginBottomPx: 60,
+  compactMarginTopPx: 80,
+  compactMarginBottomPx: 80,
   compactMarginLeftPx: 32,
   compactMarginRightPx: 32,
   defaultCJKFont: 'PingFang TC',
