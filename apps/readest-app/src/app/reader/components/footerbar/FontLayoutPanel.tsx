@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
 import Slider from '@/components/Slider';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
 
 const FONT_SIZE_LIMITS = {
   MIN: 8,
@@ -146,30 +147,32 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
         min={FONT_SIZE_LIMITS.MIN}
         max={FONT_SIZE_LIMITS.MAX}
       />
-      <div className='flex w-full items-center justify-between gap-x-6'>
-        <Slider
-          label={_('Page Margin')}
-          initialValue={getMarginProgressValue(
-            viewSettings?.marginTopPx ?? 44,
-            viewSettings?.gapPercent ?? 5,
-          )}
-          bubbleElement={<TbBoxMargin size={marginIconSize} />}
-          minLabel={_('Small')}
-          maxLabel={_('Large')}
-          step={10}
-          onChange={handleMarginChange}
-        />
-        <Slider
-          label={_('Line Spacing')}
-          initialValue={(viewSettings?.lineHeight ?? 1.6) * LINE_HEIGHT_LIMITS.MULTIPLIER}
-          bubbleElement={<RxLineHeight size={marginIconSize} />}
-          minLabel={_('Small')}
-          maxLabel={_('Large')}
-          min={LINE_HEIGHT_LIMITS.MIN}
-          max={LINE_HEIGHT_LIMITS.MAX}
-          onChange={handleLineHeightChange}
-        />
-      </div>
+      {!isMinimalMode() && (
+        <div className='flex w-full items-center justify-between gap-x-6'>
+          <Slider
+            label={_('Page Margin')}
+            initialValue={getMarginProgressValue(
+              viewSettings?.marginTopPx ?? 44,
+              viewSettings?.gapPercent ?? 5,
+            )}
+            bubbleElement={<TbBoxMargin size={marginIconSize} />}
+            minLabel={_('Small')}
+            maxLabel={_('Large')}
+            step={10}
+            onChange={handleMarginChange}
+          />
+          <Slider
+            label={_('Line Spacing')}
+            initialValue={(viewSettings?.lineHeight ?? 1.6) * LINE_HEIGHT_LIMITS.MULTIPLIER}
+            bubbleElement={<RxLineHeight size={marginIconSize} />}
+            minLabel={_('Small')}
+            maxLabel={_('Large')}
+            min={LINE_HEIGHT_LIMITS.MIN}
+            max={LINE_HEIGHT_LIMITS.MAX}
+            onChange={handleLineHeightChange}
+          />
+        </div>
+      )}
       {/* -mt-4 halves the container's gap-y-8 above this row: the sliders are
           peers of each other, this is a trailing escape hatch and reads better
           tucked closer. `self-end` follows `dir`, so it mirrors in RTL. */}
