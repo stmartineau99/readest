@@ -132,7 +132,7 @@ const SavedWordsFilters: React.FC<SavedWordsFiltersProps> = ({
         onSelect={(level) => onChange({ ...filter, tocfl: toggleLevel(filter.tocfl, level) })}
       />
       <ChipRow
-        label=''
+        label='Other'
         options={[{ value: 'chengyu', label: '成語' }]}
         isSelected={() => filter.chengyu}
         onSelect={() => onChange({ ...filter, chengyu: !filter.chengyu })}
