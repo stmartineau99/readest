@@ -548,27 +548,30 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           </button>
         ) : null}
       </div>
-      <div className='flex min-w-0 flex-1 items-center justify-center gap-1'>
-        {onSpeak ? (
-          <button
-            type='button'
-            aria-label={_('Speak')}
-            title={_('Speak')}
-            aria-pressed={!!speaking}
-            onClick={onSpeak}
-            className={clsx(
-              'btn btn-ghost btn-square btn-xs shrink-0',
-              speaking
-                ? 'text-base-content not-eink:animate-pulse'
-                : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
-            )}
-          >
-            <MdVolumeUp size={18} />
-          </button>
-        ) : null}
-        <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
-          {currentWord}
-        </span>
+      <div className='flex min-w-0 flex-1 items-center justify-center'>
+        {/* The word alone is centered; the speaker hangs off its start edge. */}
+        <div className='relative flex min-w-0 items-center'>
+          {onSpeak ? (
+            <button
+              type='button'
+              aria-label={_('Speak')}
+              title={_('Speak')}
+              aria-pressed={!!speaking}
+              onClick={onSpeak}
+              className={clsx(
+                'btn btn-ghost btn-square btn-xs absolute end-full me-1 shrink-0',
+                speaking
+                  ? 'text-base-content not-eink:animate-pulse'
+                  : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
+              )}
+            >
+              <MdVolumeUp size={18} />
+            </button>
+          ) : null}
+          <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
+            {currentWord}
+          </span>
+        </div>
       </div>
       <div className='flex h-8 w-8 items-center justify-center'>
         {onManage ? (
@@ -720,10 +723,22 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
-        {lexiconText ? (
-          <p data-testid='dict-lexicon' className='not-eink:opacity-60 px-4 pt-2 text-xs'>
-            {lexiconText}
-          </p>
+        {lexiconText || lexiconEntry?.chengyu ? (
+          <div className='flex items-center gap-2 px-4 pt-2'>
+            {lexiconEntry?.chengyu && (
+              <span
+                data-testid='dict-chengyu'
+                className='badge badge-sm badge-outline badge-primary eink:border-base-content eink:text-base-content'
+              >
+                成語
+              </span>
+            )}
+            {lexiconText ? (
+              <p data-testid='dict-lexicon' className='not-eink:opacity-60 text-xs'>
+                {lexiconText}
+              </p>
+            ) : null}
+          </div>
         ) : null}
         {noProvidersAtAll ? (
           <div className='flex h-full flex-col items-center justify-center px-6 text-center'>

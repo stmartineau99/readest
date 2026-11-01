@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { MdChevronLeft, MdChevronRight, MdFilterList } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
+import Dropdown from '@/components/Dropdown';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { listSavedWords, type SavedWord } from '@/services/vocab/vocabStore';
@@ -10,6 +11,7 @@ import { BoxedList, NavigationRow } from '@/components/settings/primitives';
 import { getLocale } from '@/utils/misc';
 import SavedWordsFilters, {
   EMPTY_FILTER,
+  hasActiveFilters,
   matchesFilter,
   type SavedWordsFilter,
 } from './SavedWordsFilters';
@@ -236,15 +238,29 @@ const SavedWordsContent: React.FC = () => {
 
   return (
     <div className='flex flex-col gap-4 pb-6'>
-      <button
-        type='button'
-        className='text-base-content flex items-center gap-1 self-start py-1 text-sm'
-        onClick={() => setView({ kind: 'books' })}
-      >
-        <MdChevronLeft size={20} />
-        {view.book ?? _('All words')}
-      </button>
-      <SavedWordsFilters filter={filter} onChange={setFilter} />
+      <div className='flex items-center justify-between'>
+        <button
+          type='button'
+          className='text-base-content flex items-center gap-1 py-1 text-sm'
+          onClick={() => setView({ kind: 'books' })}
+        >
+          <MdChevronLeft size={20} />
+          {view.book ?? _('All words')}
+        </button>
+        <Dropdown
+          label={_('Filter words')}
+          showTooltip={false}
+          className='dropdown-bottom dropdown-end'
+          menuClassName='no-triangle mt-1'
+          buttonClassName={clsx(
+            'btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0',
+            hasActiveFilters(filter) && 'bg-base-300',
+          )}
+          toggleButton={<MdFilterList size={18} className='fill-base-content' />}
+        >
+          <SavedWordsFilters filter={filter} onChange={setFilter} />
+        </Dropdown>
+      </div>
       <BoxedList title={wordCount(shown.length)}>
         {shown.length === 0 && (
           <p className='text-base-content/70 py-4 pe-4'>{_('No words match the filters')}</p>

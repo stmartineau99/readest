@@ -330,6 +330,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { isWordSaved, saveEncounter } from '@/services/vocab/vocabStore';
+import { getLexiconEntry } from '@/services/lexicon/lexicon';
 
 const renderSheet = (
   props: Partial<{
@@ -384,6 +385,33 @@ describe('DictionarySheet — header', () => {
     expect((await waitFor(() => screen.getByTestId('dict-title'))).textContent).toBe('hello');
     expect(screen.getByLabelText('Manage Dictionaries')).toBeTruthy();
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — chengyu badge', () => {
+  const entry = { hsk: 7, tocfl: null, rank: null, english: null, zhuyin: null, pinyin: null };
+
+  afterEach(() => {
+    vi.mocked(getLexiconEntry).mockResolvedValue(null);
+  });
+
+  it('marks an idiom, before its lexicon line', async () => {
+    vi.mocked(getLexiconEntry).mockResolvedValue({ ...entry, chengyu: true });
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: '一毛不拔' });
+
+    const badge = await waitFor(() => screen.getByTestId('dict-chengyu'));
+    expect(badge.textContent).toBe('成語');
+    expect(badge.nextElementSibling).toBe(screen.getByTestId('dict-lexicon'));
+  });
+
+  it('leaves other words unmarked', async () => {
+    vi.mocked(getLexiconEntry).mockResolvedValue({ ...entry, chengyu: false });
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: '驚奇' });
+
+    await waitFor(() => screen.getByTestId('dict-lexicon'));
+    expect(screen.queryByTestId('dict-chengyu')).toBeNull();
   });
 });
 
