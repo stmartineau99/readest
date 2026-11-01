@@ -104,7 +104,8 @@ vi.mock('@/services/vocab/vocabStore', async () => {
     saveEncounter: vi.fn().mockResolvedValue(undefined),
   };
 });
-vi.mock('@/services/lexicon/lexicon', () => ({
+vi.mock('@/services/lexicon/lexicon', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/lexicon/lexicon')>()),
   getLexiconEntry: vi.fn().mockResolvedValue(null),
 }));
 
@@ -447,23 +448,7 @@ describe('DictionarySheet — save button', () => {
     expect(saved.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('offers Save again for the next word', async () => {
-    providersForNextRender.push(buildNavProvider('郊區'));
-    renderSheet({ word: '老闆', selection });
-
-    await act(async () => {
-      fireEvent.click(await waitFor(() => screen.getByRole('button', { name: 'Save' })));
-    });
-    await waitFor(() => screen.getByRole('button', { name: 'Saved' }));
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('nav-link'));
-    });
-
-    const save = await waitFor(() => screen.getByRole('button', { name: 'Save' }));
-    expect(save.getAttribute('aria-disabled')).toBe('false');
-  });
-
-  it('saves a word reached through a dictionary link without the selection place', async () => {
+  it('offers no Save for a word reached through a dictionary link', async () => {
     providersForNextRender.push(buildNavProvider('郊區'));
     renderSheet({ word: '老闆', selection });
 
@@ -472,17 +457,11 @@ describe('DictionarySheet — save button', () => {
       fireEvent.click(navLink);
     });
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('郊區'));
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    });
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
 
-    expect(saveEncounter).toHaveBeenCalledWith(expect.anything(), {
-      word: '郊區',
-      bookHash: undefined,
-      bookTitle: undefined,
-      cfi: undefined,
-      sentence: undefined,
-    });
+    fireEvent.click(screen.getByLabelText('Back'));
+    await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('老闆'));
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   });
 });
 

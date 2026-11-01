@@ -90,7 +90,7 @@ export interface DictionaryResultsState {
   lexiconEntry: LexiconEntry | null;
   /** Whether the current word is in the vocab database. */
   isSaved: boolean;
-  /** Save the current word, with its place in the book when it is the selected word. */
+  /** Save the selected word with its place in the book; not offered after following a link. */
   saveWord: () => void;
 }
 
@@ -604,6 +604,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   zoomedImageSrc,
   closeZoomedImage,
   lexiconEntry,
+  canGoBack,
   isSaved,
   saveWord,
 }) => {
@@ -743,21 +744,24 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
           </>
         )}
       </div>
-      <div className='px-4 pb-4 pt-2'>
-        {/* aria-disabled, not disabled: daisyUI greys out disabled buttons, and
-            the saved state keeps the accent as an outline. */}
-        <button
-          type='button'
-          onClick={isSaved ? undefined : saveWord}
-          aria-disabled={isSaved}
-          className={clsx(
-            'btn w-full',
-            isSaved ? 'btn-outline btn-primary pointer-events-none' : 'btn-primary',
-          )}
-        >
-          {isSaved ? _('Saved') : _('Save')}
-        </button>
-      </div>
+      {/* Only the selected word is saved; words reached through a link have no place in the book. */}
+      {!canGoBack && (
+        <div className='px-4 pb-4 pt-2'>
+          {/* aria-disabled, not disabled: daisyUI greys out disabled buttons, and
+              the saved state keeps the accent as an outline. */}
+          <button
+            type='button'
+            onClick={isSaved ? undefined : saveWord}
+            aria-disabled={isSaved}
+            className={clsx(
+              'btn w-full',
+              isSaved ? 'btn-outline btn-primary pointer-events-none' : 'btn-primary',
+            )}
+          >
+            {isSaved ? _('Saved') : _('Save')}
+          </button>
+        </div>
+      )}
       {zoomedImageSrc && (
         <ModalPortal showOverlay={false}>
           <ImageViewer
