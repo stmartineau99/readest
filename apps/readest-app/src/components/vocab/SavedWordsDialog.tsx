@@ -14,6 +14,7 @@ import SavedWordsFilters, {
   type SavedWordsFilter,
 } from './SavedWordsFilters';
 import { MOCK_SAVED_WORDS } from './mockSavedWords';
+import ToneColoredWord from './ToneColoredWord';
 
 export const setSavedWordsDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('saved_words_window');
@@ -33,7 +34,7 @@ interface SavedWordsData {
   lexicon: Map<string, LexiconEntry | null>;
 }
 
-/** The sentence with every occurrence of `word` marked. */
+/** The sentence with every occurrence of `word` in bold. */
 const HighlightedSentence: React.FC<{ sentence: string; word: string }> = ({ sentence, word }) => {
   const parts = sentence.split(word);
   return (
@@ -41,9 +42,7 @@ const HighlightedSentence: React.FC<{ sentence: string; word: string }> = ({ sen
       {parts.map((part, i) => (
         <React.Fragment key={i}>
           {part}
-          {i < parts.length - 1 && (
-            <mark className='bg-warning/40 text-base-content rounded-sm'>{word}</mark>
-          )}
+          {i < parts.length - 1 && <span className='font-semibold'>{word}</span>}
         </React.Fragment>
       ))}
     </>
@@ -78,7 +77,12 @@ const SavedWordItem: React.FC<{
       >
         <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
           <div className='flex items-baseline gap-2'>
-            <span className='text-base-content shrink-0 text-xl'>{word}</span>
+            <ToneColoredWord
+              word={word}
+              pinyin={lexicon?.pinyin}
+              className='shrink-0 text-xl'
+              fallbackClassName='text-base-content'
+            />
             {lexicon?.pinyin && (
               <span className='text-base-content/65 truncate text-sm'>{lexicon.pinyin}</span>
             )}
