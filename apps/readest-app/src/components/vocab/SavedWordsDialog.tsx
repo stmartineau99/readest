@@ -34,7 +34,7 @@ interface SavedWordsData {
   lexicon: Map<string, LexiconEntry | null>;
 }
 
-/** The sentence with every occurrence of `word` in bold. */
+/** The sentence with every occurrence of `word` darker and a weight above the muted, extralight sentence. */
 const HighlightedSentence: React.FC<{ sentence: string; word: string }> = ({ sentence, word }) => {
   const parts = sentence.split(word);
   return (
@@ -42,7 +42,7 @@ const HighlightedSentence: React.FC<{ sentence: string; word: string }> = ({ sen
       {parts.map((part, i) => (
         <React.Fragment key={i}>
           {part}
-          {i < parts.length - 1 && <span className='font-semibold'>{word}</span>}
+          {i < parts.length - 1 && <span className='text-base-content font-normal'>{word}</span>}
         </React.Fragment>
       ))}
     </>
@@ -112,7 +112,7 @@ const SavedWordItem: React.FC<{
         <ul className='bg-base-200 divide-base-300 border-base-300 -ms-4 divide-y border-t'>
           {encounters.map((encounter) => (
             <li key={encounter.cfi} className='flex flex-col gap-1 py-3 pe-4 ps-8'>
-              <span className='text-base-content text-[0.95em] leading-relaxed'>
+              <span className='text-base-content/70 text-[0.95em] font-extralight leading-relaxed'>
                 {encounter.sentence ? (
                   <HighlightedSentence sentence={encounter.sentence} word={word} />
                 ) : (
@@ -292,7 +292,7 @@ export const SavedWordsDialog: React.FC = () => {
       onClose={() => setIsOpen(false)}
       useOverlayScroll
       boxClassName='sm:h-[85%]! sm:w-[560px]! sm:max-w-(--breakpoint-sm)!'
-      contentClassName='px-4! sm:px-6!'
+      contentClassName='px-4! sm:px-6! font-light'
     >
       {isOpen && <SavedWordsContent />}
     </Dialog>
