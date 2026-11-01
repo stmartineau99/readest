@@ -718,7 +718,7 @@ describe('services/constants', () => {
     it('has expected structure', () => {
       expect(typeof DEFAULT_ANNOTATOR_CONFIG).toBe('object');
       expect(typeof DEFAULT_ANNOTATOR_CONFIG.enableAnnotationQuickActions).toBe('boolean');
-      expect(DEFAULT_ANNOTATOR_CONFIG.annotationQuickAction).toBe('dictionary');
+      expect(DEFAULT_ANNOTATOR_CONFIG.annotationQuickAction).toBeNull();
       expect(typeof DEFAULT_ANNOTATOR_CONFIG.copyToNotebook).toBe('boolean');
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBeDefined();
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBe(DEFAULT_NOTE_EXPORT_CONFIG);

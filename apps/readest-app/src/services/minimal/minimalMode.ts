@@ -40,7 +40,8 @@ export const MINIMAL_VIEW_PRESET: ViewPreset = {
   annotationQuickAction: 'dictionary',
 };
 
-const UPSTREAM_VIEW_PRESET: ViewPreset = {
+// A function, not a constant: upstream tests mock @/services/constants partially.
+const getUpstreamViewPreset = (): ViewPreset => ({
   marginTopPx: DEFAULT_BOOK_LAYOUT.marginTopPx,
   marginBottomPx: DEFAULT_BOOK_LAYOUT.marginBottomPx,
   marginLeftPx: DEFAULT_BOOK_LAYOUT.marginLeftPx,
@@ -51,13 +52,13 @@ const UPSTREAM_VIEW_PRESET: ViewPreset = {
   compactMarginRightPx: DEFAULT_BOOK_LAYOUT.compactMarginRightPx,
   defaultCJKFont: DEFAULT_BOOK_FONT.defaultCJKFont,
   annotationQuickAction: DEFAULT_ANNOTATOR_CONFIG.annotationQuickAction,
-};
+});
 
 // Optional chaining: upstream tests mock useSettingsStore without getState.
 export const isMinimalMode = () => useSettingsStore.getState?.()?.settings?.minimalMode ?? false;
 
 export const applyMinimalPreset = async (envConfig: EnvConfigType, minimal: boolean) => {
-  const preset = minimal ? MINIMAL_VIEW_PRESET : UPSTREAM_VIEW_PRESET;
+  const preset = minimal ? MINIMAL_VIEW_PRESET : getUpstreamViewPreset();
   for (const key of Object.keys(preset) as PresetKey[]) {
     await saveViewSettings(envConfig, '', key, preset[key]);
   }
