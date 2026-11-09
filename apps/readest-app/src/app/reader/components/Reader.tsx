@@ -26,6 +26,7 @@ import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
 import SavedWordsDialog from '@/components/vocab/SavedWordsDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { ProofreadRulesManager } from './ProofreadRules';
@@ -170,6 +171,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <AboutWindow />
         <ReadingStatsDialog />
         <SavedWordsDialog />
+        <VocabularyDialog />
         <KeyboardShortcutsHelp />
         <UpdaterWindow />
         <ProofreadRulesManager />

@@ -7,6 +7,7 @@ import {
   useDictionaryResults,
   DictionaryResultsHeader,
   DictionaryResultsBody,
+  type VocabularyCapture,
 } from './DictionaryResultsView';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 
@@ -14,6 +15,8 @@ interface DictionarySheetProps {
   word: string;
   lang?: string;
   selection?: DictionarySelectionContext;
+  /** Save this lookup to the vocabulary builder and show the Learning / Mastered chips. */
+  capture?: VocabularyCapture;
   onDismiss: () => void;
   onManage?: () => void;
   onOpenSavedWord?: (word: string) => void;
@@ -23,11 +26,12 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   word,
   lang,
   selection,
+  capture,
   onDismiss,
   onManage,
   onOpenSavedWord,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection });
+  const state = useDictionaryResults({ word, lang, selection, capture });
   return (
     <Dialog
       isOpen
@@ -45,6 +49,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          vocabularyLang={state.vocabularyLang}
         />
       }
       contentClassName='px-0! mt-0!'

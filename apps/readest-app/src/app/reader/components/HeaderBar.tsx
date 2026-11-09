@@ -7,7 +7,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookConfig, useBookData } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -69,10 +69,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { isDarkMode, systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData, getConfig } = useBookDataStore();
   const viewSettings = getViewSettings(bookKey);
-  const bookData = getBookData(bookKey);
-  const bookConfig = getConfig(bookKey);
+  const bookData = useBookData(bookKey);
+  const bookConfig = useBookConfig(bookKey);
   // Readest Cloud's per-book stamps. Includes the PUSH stamps so this agrees
   // with the View menu's sync row, which has always counted them — otherwise
   // the row could read "Synced 2 minutes ago" while this dialog said "Never
@@ -271,10 +270,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               px-1.5 reserves the 6px each 44px halo extends past its 32px
               button, so the halos do not create a draggable scroll range. */}
           <div className='no-scrollbar flex h-full min-w-0 items-center gap-x-4 overflow-x-auto px-1.5 max-[350px]:gap-x-2'>
-            {/* Tablet portrait runs the mobile footer bar, whose TOC tab opens
-                this same sidebar — showing the toggle here too gave one action
-                two buttons (#5634). Phones are already covered by `sm:`. */}
-            {!isSideBarVisible && !forceMobileLayout && (
+            {/* Tablets keep the toggle top-left in every orientation, where
+                it sits on desktop, so it is not mistaken for Go to Library
+                (#7292). Phones are hidden by `sm:`; iPhone Duo keeps the
+                phone bars, whose TOC tab opens this sidebar (#5634). */}
+            {!isSideBarVisible && !(forceMobileLayout && isIPhoneDuo) && (
               <div className='hidden sm:flex'>
                 <SidebarToggler bookKey={bookKey} />
               </div>

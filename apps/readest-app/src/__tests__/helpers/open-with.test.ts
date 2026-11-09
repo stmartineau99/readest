@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────
@@ -178,6 +179,18 @@ describe('parseOpenWithFiles', () => {
       const result = await parseOpenWithFiles(null);
 
       expect(result).toEqual(['/path/to/book.epub']);
+    });
+
+    test.each([
+      'A%23B.epub',
+      '100%25.epub',
+      'Report%2520Final.epub',
+      '%E4%B8%89%E4%BD%93%20book.epub',
+    ])('preserves the raw iOS file URL for %s', async (basename) => {
+      const url = `file:///path/to/${basename}`;
+      mockGetCurrent.mockResolvedValue([url]);
+      const result = await parseOpenWithFiles({ isIOSApp: true } as never);
+      expect(result).toEqual([url]);
     });
 
     test('preserves file:// prefix for iOS', async () => {

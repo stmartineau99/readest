@@ -34,6 +34,7 @@ import { migrateMinimalPreset } from './minimal/minimalPreset';
 export interface Context {
   fs: FileSystem;
   isMobile: boolean;
+  isDesktopApp?: boolean;
   isEink: boolean;
   isAppDataSandbox: boolean;
 }
@@ -50,6 +51,7 @@ export function getDefaultViewSettings(ctx: Context): ViewSettings {
     ...DEFAULT_ANNOTATOR_CONFIG,
     ...DEFAULT_WORD_LENS_CONFIG,
     ...DEFAULT_VIEW_SETTINGS_CONFIG,
+    spreadMode: ctx.isDesktopApp ? 'auto' : 'none',
     ...(ctx.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
     ...(ctx.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
     ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),

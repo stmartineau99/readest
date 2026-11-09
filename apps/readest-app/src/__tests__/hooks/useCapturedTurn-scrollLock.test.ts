@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { FoliateView, Renderer } from '@/types/view';
@@ -127,7 +128,7 @@ vi.mock('@/store/readerStore', () => {
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) }),
+  ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) })),
 }));
 vi.mock('@/store/settingsStore', () => {
   const useSettingsStore = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });
@@ -319,22 +320,32 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.beginDrag).toHaveBeenCalledExactlyOnceWith(true, false, 'curl');
   });
 
-  test('keeps native book textures when only the toolbar outside the sheet is hidden', async () => {
-    h.android = true;
-    h.renderer.previewPage = async () => null;
+  // Native sheets span the whole reader cell, so they hold the toolbars and the
+  // open panel. A warm-up would raise a kept sheet over the changed chrome.
+  test.each([
+    ['the toolbars hide', { hoveredBookKey: null, bottomBarTab: 'progress' }],
+    ['the open panel changes', { hoveredBookKey: 'book-1', bottomBarTab: 'color' }],
+  ])('drops native pages when %s', async (_change, next) => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
     const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = async () => null;
     const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
-    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
     try {
       const viewStates = { 'book-1': { inited: true, ttsEnabled: false } };
       act(() => {
         for (const listener of h.readerListeners)
           listener(
-            { hoveredBookKey: null, bottomBarTab: '', viewStates },
-            { hoveredBookKey: 'book-1', bottomBarTab: '', viewStates },
+            { ...next, viewStates },
+            { hoveredBookKey: 'book-1', bottomBarTab: 'progress', viewStates },
           );
       });
-      expect(invalidate).not.toHaveBeenCalled();
+      expect(invalidate).toHaveBeenCalledTimes(1);
     } finally {
       unmount();
       invalidate.mockRestore();

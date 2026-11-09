@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -105,6 +106,38 @@ describe('OpenAICompatibleSpeechProvider', () => {
       ['jm_kumo', 'ja-JP'],
       ['nova', 'mul'],
     ]);
+  });
+
+  it("tells a Kokoro voice's gender from its name; others state none", async () => {
+    fetchMock.mockResolvedValue(Response.json({ voices: ['af_heart', 'jm_kumo', 'nova'] }));
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.name, v.gender])).toEqual([
+      ['af_heart', 'female'],
+      ['jm_kumo', 'male'],
+      ['nova', undefined],
+    ]);
+  });
+
+  it("shows a listed voice's name but speaks with its id", async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        voices: [
+          { id: 'voice-7f3a', name: 'Narrator', lang: 'en-US' },
+          { id: 'F1', lang: 'en-US' },
+        ],
+      }),
+    );
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.id, v.name])).toEqual([
+      ['s1:voice-7f3a', 'Narrator'],
+      ['s1:F1', 'F1'],
+    ]);
+    // The service names its voices: the picker shows them untranslated.
+    expect(voices.every((v) => v.literalName)).toBe(true);
+    fetchMock.mockResolvedValueOnce(audioResponse());
+    await provider.synthesize(req(voices[0]!.id), new AbortController().signal);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect(JSON.parse(init.body).voice).toBe('voice-7f3a');
   });
 
   it('falls back to the standard OpenAI voices when the listing fails', async () => {
