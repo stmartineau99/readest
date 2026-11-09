@@ -101,6 +101,12 @@
 .md-sense > :not(.md-n) {
   grid-column: 2;
 }
+/* Circled digits render larger than CJK text at the same size; scale them to
+ * the definition's glyph height and keep the line height so they stay on its baseline. */
+.md-n {
+  font-size: 0.82em;
+  line-height: calc(1.55 / 0.82);
+}
 .md-n:empty {
   display: none;
 }
