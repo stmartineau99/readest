@@ -30,8 +30,9 @@ if [ -d "$backups" ]; then
   db="$backups/vocab_$(date +%Y-%m-%d_%H%M).db"
   xcrun devicectl device copy from --device "$device" --domain-type appDataContainer \
     --domain-identifier com.stmartineau.readest --source Documents/vocab.db --destination "$db"
-  [ "$(sqlite3 "$db" 'pragma integrity_check')" = ok ] || { echo "Backup $db failed the integrity check." >&2; exit 1; }
-  echo "Backed up vocab.db ($(sqlite3 "$db" 'select count(*) from words') words) to $db"
+  ro="file:$db?immutable=1" # read-only: leaves no -wal/-shm files next to the backup
+  [ "$(sqlite3 "$ro" 'pragma integrity_check')" = ok ] || { echo "Backup $db failed the integrity check." >&2; exit 1; }
+  echo "Backed up vocab.db ($(sqlite3 "$ro" 'select count(*) from words') words) to $db"
 fi
 
 pnpm tauri ios build --debug
