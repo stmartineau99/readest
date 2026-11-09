@@ -1,7 +1,7 @@
 // Copies the bundled MoeDict StarDict into public/dictionaries/, where
 // services/dictionaries/bundledDictionary.ts fetches it on first use.
 //
-// The files are built outside the repo (~/Documents/Chinese/moedict_stardict)
+// The files are built outside the repo (~/Documents/Chinese/tools/moedict_stardict)
 // and stay out of git. Missing source only warns, so a clone without it builds.
 
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sourceDir = path.resolve(appDir, '../../../moedict_stardict/out');
+const sourceDir = path.resolve(appDir, '../../../tools/moedict_stardict/out');
 const targetDir = path.join(appDir, 'public/dictionaries');
 const files = ['moedict_zh_en.ifo', 'moedict_zh_en.idx', 'moedict_zh_en.dict.dz'];
 
@@ -23,8 +23,8 @@ if (missing.length > 0) {
 }
 
 // HSK/TOCFL levels and frequency rank, fetched by services/lexicon/lexicon.ts.
-// Built by ~/Documents/Chinese/lexicon/build_lexicon.py.
-const lexiconSource = path.resolve(appDir, '../../../lexicon/out/lexicon.db');
+// Built by ~/Documents/Chinese/tools/lexicon/build_lexicon.py.
+const lexiconSource = path.resolve(appDir, '../../../tools/lexicon/out/lexicon.db');
 if (!existsSync(lexiconSource)) {
   console.warn(`[copy-dictionaries] skipped, missing: ${lexiconSource}`);
 } else {
