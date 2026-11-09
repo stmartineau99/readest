@@ -136,6 +136,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          lexiconEntry={state.lexiconEntry}
           vocabularyLang={state.vocabularyLang}
         />
         {/* pb-5 ends the body's scrollbar above the resize grip and its hit

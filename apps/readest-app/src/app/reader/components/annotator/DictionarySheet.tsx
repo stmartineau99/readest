@@ -49,6 +49,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          lexiconEntry={state.lexiconEntry}
           vocabularyLang={state.vocabularyLang}
         />
       }

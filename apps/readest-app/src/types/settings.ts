@@ -590,7 +590,9 @@ export interface SystemSettings {
   customTextures: CustomTexture[];
   customDictionaries: ImportedDictionary[];
   dictionarySettings: DictionarySettings;
+  /** @deprecated version 1 of the bundled MoeDict; read once to migrate to bundledDictionaryVersion. */
   bundledDictionaryImported?: boolean;
+  bundledDictionaryVersion?: number;
   opdsCatalogs: OPDSCatalog[];
   absServers: ABSServer[];
   /** User-configured translation backends; synced as `custom_translator`. */

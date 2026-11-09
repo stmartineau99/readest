@@ -1,0 +1,197 @@
+/* Dictionary card (fork): the header from CardTitle.tsx and the MoeDict entry
+ * HTML written by tools/moedict_stardict/make_stardict.py (md-* classes).
+ * Colors come from the theme's base-content so light, dark and e-ink follow. */
+
+/* Header: headword with zhuyin set vertically to the right of each character. */
+.md-headword {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+.md-headword-char {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+.md-headword-glyph {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 600;
+}
+.md-zhuyin {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6rem;
+  line-height: 1.05;
+}
+.md-zhuyin-col {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.md-zhuyin-neutral {
+  line-height: 0.6;
+}
+.md-title-pinyin {
+  font-size: 1.125rem;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+.md-title-pinyin::before,
+.md-title-pinyin::after {
+  content: '|';
+  margin: 0 0.3em;
+  font-weight: 300;
+  color: color-mix(in oklab, var(--color-base-content) 35%, transparent);
+}
+
+/* StarDict writes the headword above each entry; the header already shows it. */
+[data-dict-content] h1:has(+ div > .md-entry) {
+  display: none;
+}
+
+.md-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  /* StarDict wraps entries in .text-sm; bring them back to the card's scaled 1em. */
+  font-size: calc(1em / 0.875);
+  line-height: 1.55;
+}
+.md-en {
+  line-height: 1.45;
+}
+.md-zh {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  padding-top: 0.75em;
+  border-top: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+}
+.md-reading {
+  display: flex;
+  gap: 0.5em;
+  align-items: baseline;
+  font-size: 0.875em;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+.md-reading:not(:first-child) {
+  padding-top: 0.75em;
+  border-top: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+}
+.md-reading .md-pinyin {
+  font-weight: 400;
+}
+.md-senses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.md-sense {
+  display: grid;
+  grid-template-columns: 1.4em minmax(0, 1fr);
+  column-gap: 0.25em;
+  row-gap: 0.35em;
+}
+.md-sense > :not(.md-n) {
+  grid-column: 2;
+}
+.md-n:empty {
+  display: none;
+}
+.md-sense:has(> .md-n:empty) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.md-sense:has(> .md-n:empty) > * {
+  grid-column: 1;
+}
+.md-lab {
+  display: inline-block;
+  margin-inline-end: 0.4em;
+  padding: 0.15em 0.25em;
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 55%, transparent);
+  border-radius: 3px;
+  font-size: 0.7em;
+  line-height: 1;
+  vertical-align: 0.15em;
+}
+.md-ex {
+  font-size: 0.95em;
+}
+.md-rel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35em;
+}
+.md-rel .md-lab {
+  margin-inline-end: 0;
+}
+.md-chip {
+  padding: 0.1em 0.5em;
+  border-radius: 6px;
+  font-size: 0.875em;
+  background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+[data-eink='true'] .md-chip {
+  background: none;
+  border: 1px solid var(--color-base-content);
+}
+.md-link,
+.md-quote {
+  font-size: 0.875em;
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+.md-q summary {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.8em;
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+.md-q summary::-webkit-details-marker {
+  display: none;
+}
+/* A small arrow before 書證: points right when closed, down when open. */
+.md-q summary::before {
+  content: '';
+  width: 0.4em;
+  height: 0.4em;
+  margin-inline-end: 0.5em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.md-q[open] summary::before {
+  transform: rotate(45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-q summary::before {
+    transition: none;
+  }
+}
+.md-q[open] summary {
+  margin-bottom: 0.3em;
+}
+.md-q .md-quote + .md-quote {
+  margin-top: 0.3em;
+}
+.md-src {
+  font-size: 0.75em;
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+}
+[data-eink='true'] .md-title-pinyin,
+[data-eink='true'] .md-reading,
+[data-eink='true'] .md-link,
+[data-eink='true'] .md-quote,
+[data-eink='true'] .md-q summary,
+[data-eink='true'] .md-src {
+  color: var(--color-base-content);
+}

@@ -109,6 +109,9 @@ vi.mock('@/services/lexicon/lexicon', async (importOriginal) => ({
   getLexiconEntry: vi.fn().mockResolvedValue(null),
 }));
 
+// Minimal mode (fork) swaps in the CardTitle header; off unless a test turns it on.
+vi.mock('@/services/minimal/minimalMode', () => ({ isMinimalMode: vi.fn(() => false) }));
+
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
@@ -331,6 +334,7 @@ import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { getSavedWord, saveEncounter } from '@/services/vocab/vocabStore';
 import { getLexiconEntry } from '@/services/lexicon/lexicon';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
 
 const renderSheet = (
   props: Partial<{
@@ -1097,5 +1101,81 @@ describe('DictionarySheet — auto-play pronunciation fan-out (#6265)', () => {
     await waitFor(() => expect(seen).toHaveLength(1));
 
     expect(seen[0]!.autoPlay).toBe(false);
+  });
+});
+
+describe('DictionarySheet — minimal mode card (fork)', () => {
+  const entry = {
+    hsk: 5,
+    tocfl: '3',
+    rank: 1644,
+    english: null,
+    zhuyin: 'ㄗˇ ㄒㄧˋ',
+    pinyin: 'zǐ xì',
+    chengyu: false,
+  };
+  // The MoeDict HTML make_stardict.py writes, cut down to one sense.
+  const buildMoeDictProvider = (): DictionaryProvider => ({
+    id: 'moedict-test',
+    kind: 'stardict',
+    label: 'MoeDict Test',
+    async lookup(word, ctx) {
+      const h1 = document.createElement('h1');
+      h1.textContent = word;
+      const div = document.createElement('div');
+      div.innerHTML =
+        '<div class="md-entry"><div class="md-en">careful</div><div class="md-zh">' +
+        '<ol class="md-senses"><li class="md-sense"><span class="md-n"></span>' +
+        '<div class="md-def">周密、不輕率。</div><details class="md-q"><summary data-testid="quote-toggle">' +
+        '書證</summary><div class="md-quote">《紅樓夢》</div></details>' +
+        '</li></ol></div></div>';
+      ctx.container.append(h1, div);
+      return { ok: true, headword: word, sourceLabel: '重編國語辭典修訂本' };
+    },
+  });
+
+  beforeEach(() => {
+    vi.mocked(isMinimalMode).mockReturnValue(true);
+    vi.mocked(getLexiconEntry).mockResolvedValue(entry);
+  });
+  afterEach(() => {
+    vi.mocked(isMinimalMode).mockReturnValue(false);
+    vi.mocked(getLexiconEntry).mockResolvedValue(null);
+  });
+
+  it('puts zhuyin, pinyin and the lexicon line in the header, not the body', async () => {
+    providersForNextRender.push(buildMoeDictProvider());
+    renderSheet({ word: '仔細' });
+
+    const header = screen.getByTestId('dialog-header');
+    await waitFor(() => expect(header.querySelector('[data-testid="dict-pinyin"]')).toBeTruthy());
+    expect(header.querySelector('[data-testid="dict-pinyin"]')!.textContent).toBe('zǐ xì');
+    expect(header.querySelector('[data-testid="dict-lexicon"]')!.textContent).toBe(
+      'HSK 5 · TOCFL 3 · #1,644',
+    );
+    expect(header.querySelector('[data-testid="dict-card-title"]')!.textContent).toBe(
+      '仔ㄗˇ細ㄒㄧˋ',
+    );
+    expect(
+      screen.getByTestId('dialog-body').querySelector('[data-testid="dict-lexicon"]'),
+    ).toBeNull();
+  });
+
+  it('hides the Dictionaries heading', async () => {
+    providersForNextRender.push(buildMoeDictProvider());
+    renderSheet({ word: '仔細' });
+
+    await waitFor(() => screen.getByText('重編國語辭典修訂本'));
+    expect(screen.getByText('Dictionaries').className).toContain('hidden');
+  });
+
+  it('opens the 書證 quotes without collapsing the card', async () => {
+    providersForNextRender.push(buildMoeDictProvider());
+    renderSheet({ word: '仔細' });
+
+    const expanded = () => screen.getByTestId('dict-card').getAttribute('aria-expanded');
+    await waitFor(() => expect(expanded()).toBe('true'));
+    fireEvent.click(await waitFor(() => screen.getByTestId('quote-toggle')));
+    expect(expanded()).toBe('true');
   });
 });

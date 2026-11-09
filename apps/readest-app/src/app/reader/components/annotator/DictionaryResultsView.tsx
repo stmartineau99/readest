@@ -24,6 +24,8 @@ import {
   type SavedWord,
 } from '@/services/vocab/vocabStore';
 import { isCJKStr } from '@/utils/lang';
+import { isMinimalMode } from '@/services/minimal/minimalMode';
+import CardTitle from '@/components/vocab/CardTitle';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -688,13 +690,25 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   onManage,
   onSpeak,
   speaking,
+  lexiconEntry,
   vocabularyLang,
 }) => {
   const _ = useTranslation();
+  const minimal = isMinimalMode();
   return (
     <div className={clsx('w-full', headerClassName)}>
-      <div className='flex h-8 w-full items-center justify-between px-2'>
-        <div className='flex h-8 w-8 items-center justify-center'>
+      <div
+        className={clsx(
+          'flex w-full items-center justify-between',
+          minimal ? 'min-h-8 py-1 ps-2 pe-2' : 'h-8 px-2',
+        )}
+      >
+        <div
+          className={clsx(
+            'flex h-8 w-8 items-center justify-center',
+            minimal && !canGoBack && 'hidden',
+          )}
+        >
           {canGoBack ? (
             <button
               type='button'
@@ -707,8 +721,18 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           ) : null}
         </div>
         <div className='flex min-w-0 flex-1 items-center justify-center'>
+          {minimal ? (
+            <div className='min-w-0 flex-1'>
+              <CardTitle
+                word={currentWord}
+                entry={lexiconEntry}
+                onSpeak={onSpeak}
+                speaking={speaking}
+              />
+            </div>
+          ) : null}
           {/* The word alone is centered; the speaker hangs off its start edge. */}
-          <div className='relative flex min-w-0 items-center'>
+          <div className={clsx('relative flex min-w-0 items-center', minimal && 'hidden')}>
             {onSpeak ? (
               <button
                 type='button'
@@ -792,7 +816,12 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
 
   const definitionsSection = visibleDefinitionProviders.length > 0 && (
     <section className={sectionClassName}>
-      <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
+      <h3
+        className={clsx(
+          'not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide',
+          isMinimalMode() && 'hidden',
+        )}
+      >
         {_('Dictionaries')}
       </h3>
       <ul className='flex flex-col gap-3'>
@@ -815,7 +844,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                     if (node === e.currentTarget) break;
                     if (node instanceof Element) {
                       const tag = node.tagName;
-                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
+                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG' || tag === 'SUMMARY')
+                        return;
                     }
                   }
                   toggleExpanded(p.id);
@@ -894,7 +924,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
-        {lexiconText || lexiconEntry?.chengyu ? (
+        {/* Minimal mode shows the lexicon line in the header (CardTitle). */}
+        {!isMinimalMode() && (lexiconText || lexiconEntry?.chengyu) ? (
           <div className='flex items-center gap-2 px-4 pt-2'>
             {lexiconEntry?.chengyu && (
               <span
