@@ -202,36 +202,64 @@
   color: var(--color-base-content);
 }
 
-/* Example sentences under the definitions (ExampleSentences.tsx): the Chinese in
- * gray with the looked-up word in the text color, the English below. Mainland
- * words get a dotted accent underline and the Taiwan word after them. */
-.md-examples {
+/* Dictionary | Sentences tabs (CardTabs.tsx): a centered row at the top of the
+ * card with a hairline below; the selected tab sits on a gray pill. */
+.md-tab-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.75em;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
 }
+.md-tab {
+  min-height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  background: transparent;
+  cursor: pointer;
+}
+.md-tab-selected {
+  color: var(--color-base-content);
+  background: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+}
+[data-eink='true'] .md-tab {
+  color: var(--color-base-content);
+}
+[data-eink='true'] .md-tab-selected {
+  background: none;
+  outline: 1px solid var(--color-base-content);
+}
+/* While Sentences is selected, the panel replaces the definitions. */
+:has(> .md-sents-panel) > [data-card-dict] {
+  display: none;
+}
+
+/* The Sentences tab (ExampleSentences.tsx): the Chinese in gray with the
+ * looked-up word in the text color, the English below, a faint rule between
+ * sentences. Mainland words get a dotted accent underline and the Taiwan word
+ * after them. */
 .md-ex-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85em;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .md-ex-item {
-  display: grid;
-  grid-template-columns: 1em minmax(0, 1fr);
-  column-gap: 0.35em;
-  row-gap: 0.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 0;
 }
-.md-ex-item::before {
-  content: '▸';
-  font-size: 0.8em;
-  line-height: 2.1;
-  color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+.md-ex-item:first-child {
+  padding-top: 0;
+}
+.md-ex-item + .md-ex-item {
+  border-top: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
 }
 .md-ex-zh {
-  grid-column: 2;
   margin: 0;
   font-size: 1.05em;
   line-height: 1.6;
@@ -252,27 +280,16 @@
   color: var(--color-primary);
 }
 .md-ex-en {
-  grid-column: 2;
   margin: 0;
   line-height: 1.45;
 }
-.md-ex-more {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25em;
-  min-height: 44px;
-  margin-inline-start: 1.35em;
-  padding: 0 0.6em;
-  border-radius: 8px;
-  font-size: 0.875em;
-  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
-  background: color-mix(in oklab, var(--color-base-content) 6%, transparent);
+.md-ex-empty {
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
 }
 /* E-ink: no grays or accent; the looked-up word is bold instead. */
 [data-eink='true'] .md-ex-zh,
 [data-eink='true'] .md-ex-taiwan,
-[data-eink='true'] .md-ex-item::before {
+[data-eink='true'] .md-ex-empty {
   color: var(--color-base-content);
 }
 [data-eink='true'] .md-ex-word {
@@ -280,9 +297,4 @@
 }
 [data-eink='true'] .md-ex-mainland {
   text-decoration-color: var(--color-base-content);
-}
-[data-eink='true'] .md-ex-more {
-  color: var(--color-base-content);
-  background: none;
-  border: 1px solid var(--color-base-content);
 }

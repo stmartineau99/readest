@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { MdExpandMore } from 'react-icons/md';
 import clsx from 'clsx';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,9 +8,6 @@ import {
   type MainlandWord,
 } from '@/services/examples/sentences';
 import './moedict.css';
-
-/** Sentences shown before "More examples". */
-const FIRST = 3;
 
 interface Piece {
   text: string;
@@ -59,16 +55,15 @@ interface ExampleSentencesProps {
   fontScale: number;
 }
 
-/** Example sentences under the dictionary card's definitions; renders nothing without any. */
+/** The Sentences tab's list: every stored sentence, or one line saying there are none. */
 const ExampleSentences: React.FC<ExampleSentencesProps> = ({ word, fontScale }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const [sentences, setSentences] = useState<ExampleSentence[]>([]);
-  const [expanded, setExpanded] = useState(false);
+  /** null while loading, so "No example sentences" doesn't flash first. */
+  const [sentences, setSentences] = useState<ExampleSentence[] | null>(null);
 
   useEffect(() => {
-    setSentences([]);
-    setExpanded(false);
+    setSentences(null);
     if (!appService || !word) return;
     let cancelled = false;
     void getExampleSentences(appService, word).then((found) => {
@@ -79,19 +74,20 @@ const ExampleSentences: React.FC<ExampleSentencesProps> = ({ word, fontScale }) 
     };
   }, [appService, word]);
 
-  if (sentences.length === 0) return null;
-  const rest = sentences.length - FIRST;
-  const shown = expanded ? sentences : sentences.slice(0, FIRST);
+  if (sentences === null) return null;
+  if (sentences.length === 0) {
+    return <p className='md-ex-empty px-4 pt-4'>{_('No example sentences')}</p>;
+  }
 
   return (
     <section
       data-testid='dict-examples'
       data-dict-content=''
-      className='md-examples px-4 pt-4'
+      className='px-4 pt-4'
       style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
     >
       <ul className='md-ex-list'>
-        {shown.map((s, i) => (
+        {sentences.map((s, i) => (
           <li key={i} className='md-ex-item'>
             <p className='md-ex-zh' lang='zh-Hant'>
               {splitSentence(s.zh, word, s.mainland).map((p, j) => (
@@ -109,17 +105,6 @@ const ExampleSentences: React.FC<ExampleSentencesProps> = ({ word, fontScale }) 
           </li>
         ))}
       </ul>
-      {rest > 0 && (
-        <button
-          type='button'
-          className='md-ex-more'
-          aria-expanded={expanded}
-          onClick={() => setExpanded((e) => !e)}
-        >
-          {expanded ? _('Fewer examples') : _('More examples ({{n}})', { n: rest })}
-          <MdExpandMore aria-hidden='true' size={16} className={clsx(expanded && 'rotate-180')} />
-        </button>
-      )}
     </section>
   );
 };

@@ -26,7 +26,7 @@ import {
 import { isCJKStr } from '@/utils/lang';
 import { isMinimalMode } from '@/services/minimal/minimalMode';
 import CardTitle from '@/components/vocab/CardTitle';
-import ExampleSentences from '@/components/vocab/ExampleSentences';
+import { CardTabRow, SentencesPanel } from '@/components/vocab/CardTabs';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -698,6 +698,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   const minimal = isMinimalMode();
   return (
     <div className={clsx('w-full', headerClassName)}>
+      {minimal && <CardTabRow />}
       <div
         className={clsx(
           'flex w-full items-center justify-between',
@@ -924,7 +925,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
 
   return (
     <div className='flex h-full flex-col'>
-      <div className='flex-1 overflow-y-auto'>
+      {isMinimalMode() && <SentencesPanel word={currentWord} fontScale={fontScale} />}
+      <div data-card-dict='' className='flex-1 overflow-y-auto'>
         {/* Minimal mode shows the lexicon line in the header (CardTitle). */}
         {!isMinimalMode() && (lexiconText || lexiconEntry?.chengyu) ? (
           <div className='flex items-center gap-2 px-4 pt-2'>
@@ -961,7 +963,6 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
             {webSearchSection}
           </>
         )}
-        {isMinimalMode() && <ExampleSentences word={currentWord} fontScale={fontScale} />}
       </div>
       {/* Only the selected word is saved; words reached through a link have no place in the book. */}
       {!canGoBack && (

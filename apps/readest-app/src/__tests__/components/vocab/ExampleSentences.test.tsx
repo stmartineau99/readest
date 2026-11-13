@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import ExampleSentences, { splitSentence } from '@/components/vocab/ExampleSentences';
 import { getExampleSentences, type ExampleSentence } from '@/services/examples/sentences';
 
@@ -49,31 +49,46 @@ describe('splitSentence', () => {
 });
 
 describe('ExampleSentences', () => {
-  it('shows 3 sentences, then the rest behind More examples', async () => {
-    mockSentences(['一', '二', '三', '四', '五'].map((n) => sentence(`保養${n}`)));
+  it('shows every sentence, with no More button', async () => {
+    mockSentences(Array.from({ length: 20 }, (_v, n) => sentence(`保養${n}`)));
     render(<ExampleSentences word='保養' fontScale={1} />);
 
-    expect(await screen.findAllByRole('listitem')).toHaveLength(3);
-    fireEvent.click(screen.getByRole('button', { name: 'More examples (2)' }));
-    expect(screen.getAllByRole('listitem')).toHaveLength(5);
-    fireEvent.click(screen.getByRole('button', { name: 'Fewer examples' }));
-    expect(screen.getAllByRole('listitem')).toHaveLength(3);
-  });
-
-  it('has no More button with 3 sentences or fewer', async () => {
-    mockSentences([sentence('保養一'), sentence('保養二')]);
-    render(<ExampleSentences word='保養' fontScale={1} />);
-
-    expect(await screen.findAllByRole('listitem')).toHaveLength(2);
+    expect(await screen.findAllByRole('listitem')).toHaveLength(20);
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('renders nothing when the word has no sentences', async () => {
+  it('shows one line when the word has no sentences', async () => {
     mockSentences([]);
     render(<ExampleSentences word='全程' fontScale={1} />);
 
-    await vi.waitFor(() => expect(getExampleSentences).toHaveBeenCalled());
+    expect((await screen.findByText('No example sentences')).className).toContain('md-ex-empty');
     expect(screen.queryByTestId('dict-examples')).toBeNull();
+  });
+
+  it('shows nothing while loading, so the empty line does not flash', async () => {
+    vi.mocked(getExampleSentences).mockReturnValue(new Promise(() => {}));
+    const { container } = render(<ExampleSentences word='保養' fontScale={1} />);
+
+    await vi.waitFor(() => expect(getExampleSentences).toHaveBeenCalled());
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('loads the sentences again for a new word', async () => {
+    vi.mocked(getExampleSentences).mockImplementation(async (_s, word) => [sentence(`${word}了`)]);
+    const { rerender } = render(<ExampleSentences word='保養' fontScale={1} />);
+    expect((await screen.findByRole('listitem')).textContent).toContain('保養了');
+
+    rerender(<ExampleSentences word='詳細' fontScale={1} />);
+    await vi.waitFor(() => expect(screen.getByRole('listitem').textContent).toContain('詳細了'));
+    expect(getExampleSentences).toHaveBeenLastCalledWith(env.appService, '詳細');
+  });
+
+  it('sets the card font scale on the list', async () => {
+    mockSentences([sentence('保養一')]);
+    render(<ExampleSentences word='保養' fontScale={1.25} />);
+
+    const list = await screen.findByTestId('dict-examples');
+    expect(list.style.getPropertyValue('--dict-font-scale')).toBe('1.25');
   });
 
   it('underlines a mainland word and shows the Taiwan word after it, with the English below', async () => {

@@ -16,6 +16,7 @@ import {
   fireEvent,
   waitFor as waitForWithOptions,
   act,
+  within,
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
@@ -111,6 +112,12 @@ vi.mock('@/services/lexicon/lexicon', async (importOriginal) => ({
 
 // Minimal mode (fork) swaps in the CardTitle header; off unless a test turns it on.
 vi.mock('@/services/minimal/minimalMode', () => ({ isMinimalMode: vi.fn(() => false) }));
+// The Sentences tab (fork) reads the sentence database; the tests give it one sentence.
+vi.mock('@/services/examples/sentences', () => ({
+  getExampleSentences: vi
+    .fn()
+    .mockResolvedValue([{ zh: '請仔細檢查。', en: 'Please check carefully.', mainland: [] }]),
+}));
 
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
@@ -335,6 +342,7 @@ import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import { getSavedWord, saveEncounter } from '@/services/vocab/vocabStore';
 import { getLexiconEntry } from '@/services/lexicon/lexicon';
 import { isMinimalMode } from '@/services/minimal/minimalMode';
+import { useCardTab } from '@/components/vocab/CardTabs';
 
 const renderSheet = (
   props: Partial<{
@@ -1177,5 +1185,65 @@ describe('DictionarySheet — minimal mode card (fork)', () => {
     await waitFor(() => expect(expanded()).toBe('true'));
     fireEvent.click(await waitFor(() => screen.getByTestId('quote-toggle')));
     expect(expanded()).toBe('true');
+  });
+
+  describe('Dictionary | Sentences tabs', () => {
+    beforeEach(() => useCardTab.setState({ tab: 'dict' }));
+    const tab = (name: string) => screen.getByRole('tab', { name });
+
+    it('puts the tab row at the top of the header, Dictionary selected', async () => {
+      providersForNextRender.push(buildMoeDictProvider());
+      renderSheet({ word: '仔細' });
+
+      const header = screen.getByTestId('dialog-header');
+      const row = within(header).getByRole('tablist');
+      expect(header.firstElementChild!.firstElementChild).toBe(row);
+      expect(tab('Dictionary').getAttribute('aria-selected')).toBe('true');
+      expect(screen.queryByRole('tabpanel')).toBeNull();
+      await waitFor(() => screen.getByText('重編國語辭典修訂本'));
+    });
+
+    it('shows the sentences in the body in place of the definitions, Save still below', async () => {
+      providersForNextRender.push(buildMoeDictProvider());
+      renderSheet({ word: '仔細' });
+      await waitFor(() => screen.getByText('重編國語辭典修訂本'));
+
+      fireEvent.click(tab('Sentences'));
+      const panel = within(screen.getByTestId('dialog-body')).getByRole('tabpanel');
+      // moedict.css hides [data-card-dict] when it follows the panel (jsdom can't apply :has()).
+      expect(panel.nextElementSibling!.hasAttribute('data-card-dict')).toBe(true);
+      expect((await within(panel).findByRole('listitem')).textContent).toContain(
+        'Please check carefully.',
+      );
+      expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+      expect(screen.getByRole('tablist')).toBeTruthy();
+    });
+
+    it('opens a word reached through a link on Dictionary', async () => {
+      providersForNextRender.push(buildNavProvider('world'));
+      renderSheet({ word: 'hello' });
+
+      const navLink = await waitFor(() => screen.getByTestId('nav-link'));
+      fireEvent.click(tab('Sentences'));
+      expect(screen.getByRole('tabpanel')).toBeTruthy();
+      // The panel hides the definitions only in CSS, so the link is still clickable here.
+      await act(async () => {
+        fireEvent.click(navLink);
+      });
+
+      await waitFor(() => expect(screen.getByLabelText('Back')).toBeTruthy());
+      expect(tab('Dictionary').getAttribute('aria-selected')).toBe('true');
+      expect(screen.queryByRole('tabpanel')).toBeNull();
+    });
+
+    it('has no tabs outside minimal mode', async () => {
+      vi.mocked(isMinimalMode).mockReturnValue(false);
+      providersForNextRender.push(buildMoeDictProvider());
+      renderSheet({ word: '仔細' });
+
+      await waitFor(() => screen.getByText('重編國語辭典修訂本'));
+      expect(screen.queryByRole('tablist')).toBeNull();
+      expect(screen.queryByRole('tabpanel')).toBeNull();
+    });
   });
 });
