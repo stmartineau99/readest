@@ -201,3 +201,88 @@
 [data-eink='true'] .md-src {
   color: var(--color-base-content);
 }
+
+/* Example sentences under the definitions (ExampleSentences.tsx): the Chinese in
+ * gray with the looked-up word in the text color, the English below. Mainland
+ * words get a dotted accent underline and the Taiwan word after them. */
+.md-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+.md-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.md-ex-item {
+  display: grid;
+  grid-template-columns: 1em minmax(0, 1fr);
+  column-gap: 0.35em;
+  row-gap: 0.2em;
+}
+.md-ex-item::before {
+  content: '▸';
+  font-size: 0.8em;
+  line-height: 2.1;
+  color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+}
+.md-ex-zh {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1.05em;
+  line-height: 1.6;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+.md-ex-word {
+  color: var(--color-base-content);
+}
+.md-ex-mainland {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-primary);
+  text-underline-offset: 0.3em;
+}
+.md-ex-taiwan {
+  font-size: 0.85em;
+  color: var(--color-primary);
+}
+.md-ex-en {
+  grid-column: 2;
+  margin: 0;
+  line-height: 1.45;
+}
+.md-ex-more {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  min-height: 44px;
+  margin-inline-start: 1.35em;
+  padding: 0 0.6em;
+  border-radius: 8px;
+  font-size: 0.875em;
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+  background: color-mix(in oklab, var(--color-base-content) 6%, transparent);
+}
+/* E-ink: no grays or accent; the looked-up word is bold instead. */
+[data-eink='true'] .md-ex-zh,
+[data-eink='true'] .md-ex-taiwan,
+[data-eink='true'] .md-ex-item::before {
+  color: var(--color-base-content);
+}
+[data-eink='true'] .md-ex-word {
+  font-weight: 600;
+}
+[data-eink='true'] .md-ex-mainland {
+  text-decoration-color: var(--color-base-content);
+}
+[data-eink='true'] .md-ex-more {
+  color: var(--color-base-content);
+  background: none;
+  border: 1px solid var(--color-base-content);
+}

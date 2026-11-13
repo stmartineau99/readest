@@ -32,3 +32,14 @@ if (!existsSync(lexiconSource)) {
   copyFileSync(lexiconSource, path.join(targetDir, 'lexicon.db'));
   console.log(`[copy-dictionaries] copied lexicon.db to ${targetDir}`);
 }
+
+// Example sentences, fetched by services/examples/sentences.ts.
+// Built by ~/Documents/Chinese/tools/examples/build_sentences.py.
+const examplesSource = path.resolve(appDir, '../../../tools/examples/out/sentences_tatoeba.db');
+if (!existsSync(examplesSource)) {
+  console.warn(`[copy-dictionaries] skipped, missing: ${examplesSource}`);
+} else {
+  mkdirSync(targetDir, { recursive: true });
+  copyFileSync(examplesSource, path.join(targetDir, 'sentences_tatoeba.db'));
+  console.log(`[copy-dictionaries] copied sentences_tatoeba.db to ${targetDir}`);
+}

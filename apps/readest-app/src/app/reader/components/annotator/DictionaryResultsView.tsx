@@ -26,6 +26,7 @@ import {
 import { isCJKStr } from '@/utils/lang';
 import { isMinimalMode } from '@/services/minimal/minimalMode';
 import CardTitle from '@/components/vocab/CardTitle';
+import ExampleSentences from '@/components/vocab/ExampleSentences';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -960,6 +961,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
             {webSearchSection}
           </>
         )}
+        {isMinimalMode() && <ExampleSentences word={currentWord} fontScale={fontScale} />}
       </div>
       {/* Only the selected word is saved; words reached through a link have no place in the book. */}
       {!canGoBack && (
